@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd /Users/qone/Desktop/Sketch/egag/frontend && npm install 2>&1)",
+      "Bash(npm install konva react-konva zustand axios react-router-dom 2>&1)",
+      "Bash(cd /Users/qone/Desktop/Sketch/egag && ./gradlew build 2>&1)",
+      "Bash(cd /Users/qone/Desktop/Sketch/egag && ./gradlew build --stacktrace 2>&1 | tail -30)",
+      "Bash(java -version 2>&1)",
+      "WebSearch",
+      "Bash(./gradlew build 2>&1)",
+      "Bash(cd /Users/qone/Desktop/Sketch/egag/frontend && npm run build 2>&1)"
+    ]
+  }
+}

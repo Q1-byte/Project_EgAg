@@ -1,0 +1,5 @@
+langchain4j:
+  open-ai:
+    chat-model:
+      api-key: test-key
+      model-name: gpt-4o
