@@ -42,7 +42,7 @@ cloudinary:
 langchain4j:
   open-ai:
     chat-model:
-      api-key: ${OPENAI_API_KEY:demo}
+      api-key: ${OPENAI_API_KEY:placeholder}
       model-name: gpt-4o
       max-tokens: 1000
       log-requests: true

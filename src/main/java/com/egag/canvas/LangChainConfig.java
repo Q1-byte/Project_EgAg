@@ -1,4 +1,4 @@
-package com.egag.canvas.config; // 패키지 경로는 프로젝트에 맞게 수정
+package com.egag.canvas.config;
 
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.chat.ChatLanguageModel;
@@ -15,7 +15,7 @@ public class LangChainConfig {
     @Bean
     ChatLanguageModel chatLanguageModel() {
         return OpenAiChatModel.builder()
-                .apiKey(apiKey.equals("demo") ? "demo" : apiKey) // demo면 langchain4j 제공 키 사용
+                .apiKey(apiKey)
                 .modelName("gpt-4o")
                 .build();
     }
