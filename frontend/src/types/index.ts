@@ -34,9 +34,11 @@ export interface UserResponse {
 }
 
 export interface AuthResponse {
-  user: UserResponse
   accessToken: string
   refreshToken: string
+  userId: string
+  nickname: string
+  tokenBalance: number
 }
 
 export interface ApiError {

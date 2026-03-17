@@ -4,17 +4,23 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/canvas")
 @RequiredArgsConstructor
 public class CanvasController {
 
-    private final CanvasService canvasService;
+    private final ImageTransformService imageTransformService;
 
-    @GetMapping("/{id}")
-    public ResponseEntity<CanvasSessionResponse> getSession(@PathVariable String id) {
-        return ResponseEntity.ok(canvasService.getSession(id));
+    @PostMapping("/identify")
+    public ResponseEntity<Map<String, String>> identify(@RequestBody Map<String, String> body) {
+        return ResponseEntity.ok(imageTransformService.identifySubject(body.get("canvasBase64")));
     }
 
-    // TODO: start, stroke, topic, colorize, save, complete
+    @PostMapping("/transform")
+    public ResponseEntity<TransformResponse> transform(@RequestBody TransformRequest request) {
+        return ResponseEntity.ok(imageTransformService.transform(
+                request.getCanvasBase64(), request.getStyle(), request.getSubject(), request.getReason()));
+    }
 }

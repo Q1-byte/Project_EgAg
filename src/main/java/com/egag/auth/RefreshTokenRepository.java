@@ -1,7 +1,6 @@
 package com.egag.auth;
 
-import com.egag.auth.RefreshToken;
-import com.egag.user.User;
+import com.egag.common.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 

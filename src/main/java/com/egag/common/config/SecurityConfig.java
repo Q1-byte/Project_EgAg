@@ -1,10 +1,13 @@
 package com.egag.common.config;
 
 import com.egag.auth.JwtAuthFilter;
+import com.egag.auth.service.AuthService; // 1. AuthService 임포트 추가
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager; // 2. 추가
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration; // 3. 추가
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -19,32 +22,39 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
+    private final AuthService authService; // 4. 본인 코드에서 가져옴
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/artworks/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/users/{id}").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/users/{id}/artworks").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/search").permitAll()
-                .requestMatchers("/api/inquiries").permitAll()
-                .requestMatchers("/api/payments/webhook").permitAll()
-                .requestMatchers("/h2-console/**").permitAll()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .anyRequest().authenticated()
-            )
-            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // 5. UserDetailsService 등록 (본인 코드에서 가져옴)
+                .userDetailsService(authService)
+                .authorizeHttpRequests(auth -> auth
+                        // 팀원 코드의 상세한 설정들 유지
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/canvas/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/artworks/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users/{id}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users/{id}/artworks").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/search").permitAll()
+                        .requestMatchers("/api/inquiries").permitAll()
+                        .requestMatchers("/api/payments/webhook").permitAll()
+                        .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .anyRequest().authenticated()
+                )
+                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
+    // 6. 본인 코드에서 가져온 AuthenticationManager Bean
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
     }
 }

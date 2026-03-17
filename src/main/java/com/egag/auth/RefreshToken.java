@@ -1,6 +1,6 @@
 package com.egag.auth;
 
-import com.egag.user.User;
+import com.egag.common.domain.User;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -22,9 +22,9 @@ public class RefreshToken {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "token_hash", nullable = false, unique = true)
     private String token;
 
-    @Column(nullable = false)
+    @Column(name = "expires_at", nullable = false)
     private Instant expiryDate;
 }

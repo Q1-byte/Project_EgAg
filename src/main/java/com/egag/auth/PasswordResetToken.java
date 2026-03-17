@@ -1,6 +1,6 @@
 package com.egag.auth;
 
-import com.egag.user.User;
+import com.egag.common.domain.User;
 import jakarta.persistence.*;
 import lombok.*;
 

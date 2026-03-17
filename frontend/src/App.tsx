@@ -1,13 +1,20 @@
 import { Routes, Route } from 'react-router-dom'
+import Canvas from './pages/Canvas'
+import Decalcomania from './pages/Decalcomania'
+import Home from './pages/Home'
+import Login from './pages/Login'
+import Signup from './pages/Signup'
 
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<div>Home</div>} />
-      <Route path="/login" element={<div>Login</div>} />
-      <Route path="/signup" element={<div>Signup</div>} />
-      <Route path="/canvas" element={<div>Canvas</div>} />
-      <Route path="/canvas/:id" element={<div>Canvas Continue</div>} />
+      <Route path="/" element={<Home />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+      <Route path="/canvas" element={<Canvas />} />
+      <Route path="/canvas/:id" element={<Canvas />} />
+      <Route path="/decalcomania" element={<Decalcomania />} />
+      <Route path="/decalcomania/:id" element={<Decalcomania />} />
       <Route path="/gallery" element={<div>Gallery</div>} />
       <Route path="/explore" element={<div>Explore</div>} />
       <Route path="/artwork/:id" element={<div>Artwork Detail</div>} />
