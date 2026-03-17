@@ -12,6 +12,18 @@ import java.util.Map;
 public class CanvasController {
 
     private final ImageTransformService imageTransformService;
+    private final CanvasService canvasService;
+
+    @PostMapping("/start")
+    public ResponseEntity<StartSessionResponse> startSession(@RequestBody StartSessionRequest request) {
+        return ResponseEntity.ok(canvasService.startSession(request.getNickname()));
+    }
+
+    @PostMapping("/{id}/complete")
+    public ResponseEntity<CompleteResponse> complete(@PathVariable String id,
+                                                      @RequestBody CompleteRequest request) {
+        return ResponseEntity.ok(canvasService.complete(request.getCanvasBase64()));
+    }
 
     @PostMapping("/identify")
     public ResponseEntity<Map<String, String>> identify(@RequestBody Map<String, String> body) {

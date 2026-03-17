@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Stage, Layer, Line } from 'react-konva'
 import type Konva from 'konva'
 import { startSession, completeCanvas } from '../api/canvas'
@@ -17,21 +17,23 @@ const PALETTE = [
 ]
 
 interface Stroke { id: string; points: number[] }
-type Phase = 'start' | 'confirm' | 'drawing' | 'completing' | 'result' | 'coloring'
+type Phase = 'confirm' | 'drawing' | 'completing' | 'result' | 'coloring'
 
 export default function Decalcomania() {
   const stageRef = useRef<Konva.Stage>(null)
   const colorCanvasRef = useRef<HTMLCanvasElement>(null)
-  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const authNickname = useAuthStore(s => s.nickname)
+  const isAuthenticated = useAuthStore(s => s.isAuthenticated)
   const setTokenBalance = useAuthStore(s => s.setTokenBalance)
 
-  const [phase, setPhase] = useState<Phase>(
-    searchParams.get('confirm') === 'true' ? 'confirm' :
-    searchParams.get('skip') === 'true' ? 'drawing' : 'start'
-  )
-  const [nickname, setNickname] = useState('')
+  const getInitialPhase = (): Phase => 'confirm'
+
+  useEffect(() => {
+    if (!isAuthenticated) navigate('/login')
+  }, [])
+
+  const [phase, setPhase] = useState<Phase>(getInitialPhase)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [topic, setTopic] = useState<string | null>(null)
 
@@ -50,14 +52,19 @@ export default function Decalcomania() {
   const [customColors, setCustomColors] = useState<string[]>([])
   const colorPickerRef = useRef<HTMLInputElement>(null)
 
-  // ─── skip=true 일 때 자동 세션 시작 ─────────────────────
+  // ─── 컬러 피커 확정 시 팔레트 추가 (DOM change = 피커 닫힐 때 1회) ──
   useEffect(() => {
-    if (searchParams.get('skip') !== 'true') return
-    startSession('guest').then(res => {
-      setSessionId(res.id)
-      setTopic(res.topic)
-    }).catch(() => {})
-  }, [])
+    if (phase !== 'coloring') return
+    const input = colorPickerRef.current
+    if (!input) return
+    const onCommit = () => {
+      const hex = input.value
+      setCustomColors(prev => prev.includes(hex) ? prev : [...prev, hex])
+    }
+    input.addEventListener('change', onCommit)
+    return () => input.removeEventListener('change', onCommit)
+  }, [phase])
+
 
   // ─── 색칠 캔버스 초기화: 모든 선을 검정으로 ────────────
   useEffect(() => {
@@ -93,25 +100,14 @@ export default function Decalcomania() {
       setTopic(res.topic)
       setTokenBalance(Math.max(0, useAuthStore.getState().tokenBalance - 1))
       setPhase('drawing')
-    } catch (err: any) {
-      const code = err.response?.data?.error?.code
+    } catch (err: unknown) {
+      const code = (err as { response?: { data?: { error?: { code?: string } } } })?.response?.data?.error?.code
       if (code === 'TOKEN_INSUFFICIENT') {
         alert('토큰이 부족합니다. 토큰을 충전해주세요.')
       } else {
         alert('서버 연결 실패. 서버가 실행 중인지 확인해주세요.')
       }
       navigate('/')
-    }
-  }
-
-  // ─── 세션 시작 ───────────────────────────────────────
-  const handleStart = async () => {
-    if (!nickname.trim()) return
-    try {
-      const res = await startSession(nickname.trim())
-      setSessionId(res.id); setTopic(res.topic); setPhase('drawing')
-    } catch {
-      alert('서버 연결 실패. 서버가 실행 중인지 확인해주세요.')
     }
   }
 
@@ -208,6 +204,17 @@ export default function Decalcomania() {
   const handleColorMouseUp = () => {
     setIsPenDrawing(false)
     lastPenPos.current = null
+  }
+
+  const handleColorDoubleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = colorCanvasRef.current
+    if (!canvas) return
+    const { x, y } = getCanvasPos(e)
+    const ctx = canvas.getContext('2d')!
+    const [r, g, b] = ctx.getImageData(x, y, 1, 1).data
+    const hex = '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('')
+    setSelectedColor(hex)
+    setCustomColors(prev => prev.includes(hex) ? prev : [...prev, hex])
   }
 
   const floodFill = (canvas: HTMLCanvasElement, startX: number, startY: number, color: string) => {
@@ -317,10 +324,11 @@ export default function Decalcomania() {
     setPhase('drawing')
   }
 
-  // ─── 처음부터 (닉네임 화면으로) ──────────────────────
+  // ─── 처음부터 ────────────────────────────────────────
   const handleRestart = () => {
-    setPhase('start'); setNickname(''); setSessionId(null); setTopic(null)
+    setSessionId(null); setTopic(null)
     setStrokes([]); setCurrentPoints([]); setMirroredStrokes([]); setAiGuess(null)
+    setPhase('confirm')
   }
 
   // ─── 토큰 소모 확인 화면 ─────────────────────────────
@@ -353,68 +361,36 @@ export default function Decalcomania() {
     )
   }
 
-  // ─── 시작 화면 ────────────────────────────────────────
-  if (phase === 'start') {
-    return (
-      <div style={styles.startBg}>
-        <div style={styles.startHeader}>
-          <span style={styles.logoMirror}>🪞</span>
-          <span style={styles.logoText}>Decal<b>co</b></span>
-        </div>
-        <div style={styles.startCard}>
-          <h1 style={styles.title}>나만의 데칼코마니</h1>
-          <p style={styles.subtitle}>
-            그림의 <strong>절반만</strong> 그려봐요<br />
-            <strong>미러(AI)</strong> 친구가 반대쪽을 데칼코마니로 완성하고<br />
-            그림이 뭔지 맞춰봐요! 완성 후엔 채우기·펜으로 색칠하고<br />
-            JPG로 저장까지 할 수 있어요 🎨
-          </p>
-
-          <div style={styles.inputRow}>
-            <input
-              style={styles.input}
-              type="text"
-              placeholder="닉네임을 입력하세요"
-              value={nickname}
-              onChange={e => setNickname(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleStart()}
-              maxLength={12}
-              autoFocus
-            />
-            <button
-              style={{ ...styles.btnPrimary, opacity: nickname.trim() ? 1 : 0.5 }}
-              onClick={handleStart}
-              disabled={!nickname.trim()}
-            >시작하기 →</button>
-          </div>
-          <div style={styles.steps}>
-            {[
-              { icon: '✏️', text: '주제 키워드를 참고해서 절반을 그려요' },
-              { icon: '🪞', text: '완성하기 버튼을 눌러요' },
-              { icon: '🤖', text: '미러가 대칭으로 완성하고 그림을 맞춰요!' },
-            ].map((s, i) => (
-              <div key={i} style={styles.stepRow}>
-                <div style={styles.stepIcon}>{s.icon}</div>
-                <div style={styles.stepText}>{s.text}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   // ─── 색칠하기 화면 ────────────────────────────────────
   if (phase === 'coloring') {
     const customCols = Math.ceil(customColors.length / 2)
-    const swatchSize = Math.max(16, Math.min(32, Math.floor((442 - 8 * customCols) / (9 + customCols))))
+    const penMode = colorTool === 'pen'
+    const toolBtnCount = penMode ? 5 : 2
+    const SG = 8 // swatch gap
+    // fixed px overhead (gaps + dividers) — not dependent on size
+    const toolInnerFixed = penMode ? (5 * SG + 5) : SG   // inner gaps in toolRow
+    const fixedTotal = toolInnerFixed + 8 * SG + (customCols > 0 ? customCols * SG : 0) + 18 + 48
+    const totalCells = toolBtnCount + 9 + 1 + customCols
+    const size = Math.max(14, Math.min(32, Math.floor((CANVAS_WIDTH - 40 - fixedTotal) / totalCells)))
+    const iconSize = Math.max(10, Math.floor(size * 0.65))
 
     const swatchBtn = (c: string) => ({
-      width: swatchSize, height: swatchSize, borderRadius: '50%', cursor: 'pointer',
+      width: size, height: size, borderRadius: '50%', cursor: 'pointer',
       transition: 'transform 0.1s', flexShrink: 0,
       background: c,
-      border: selectedColor === c ? `3px solid #1a1a1a` : '2px solid #E2E8F0',
+      border: selectedColor === c ? '3px solid #1a1a1a' : '2px solid #E2E8F0',
       transform: selectedColor === c ? 'scale(1.2)' : 'scale(1)',
+    } as React.CSSProperties)
+
+    const dynBtn = (active: boolean, activeColor = '#3B82F6') => ({
+      width: size, height: size, borderRadius: Math.max(6, Math.floor(size * 0.25)),
+      cursor: 'pointer', fontSize: iconSize,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      transition: 'all 0.1s', flexShrink: 0,
+      background: active ? activeColor : '#F1F5F9',
+      color: active ? '#fff' : '#475569',
+      border: `2px solid ${active ? activeColor : '#E2E8F0'}`,
     } as React.CSSProperties)
 
     return (
@@ -426,51 +402,22 @@ export default function Decalcomania() {
         {/* 도구 + 색상 팔레트 */}
         <div style={styles.palette}>
           <div style={styles.toolRow}>
-            <button
-              onClick={() => setColorTool('bucket')}
-              style={{
-                ...styles.toolBtn,
-                background: colorTool === 'bucket' ? '#3B82F6' : '#F1F5F9',
-                color: colorTool === 'bucket' ? '#fff' : '#475569',
-                border: colorTool === 'bucket' ? '2px solid #3B82F6' : '2px solid #E2E8F0',
-              }}
-              title="채우기"
-            >🪣</button>
-            <button
-              onClick={() => setColorTool('pen')}
-              style={{
-                ...styles.toolBtn,
-                background: colorTool === 'pen' ? '#3B82F6' : '#F1F5F9',
-                color: colorTool === 'pen' ? '#fff' : '#475569',
-                border: colorTool === 'pen' ? '2px solid #3B82F6' : '2px solid #E2E8F0',
-              }}
-              title="펜"
-            >✏️</button>
-            {colorTool === 'pen' && <>
-              <div style={{ width: 1, height: 50, background: '#E2E8F0', margin: '0 2px' }} />
+            <button onClick={() => setColorTool('bucket')} style={dynBtn(colorTool === 'bucket')} title="채우기">🪣</button>
+            <button onClick={() => setColorTool('pen')} style={dynBtn(colorTool === 'pen')} title="펜">✏️</button>
+            {penMode && <>
+              <div style={{ width: 1, height: size, background: '#E2E8F0', margin: '0 2px', flexShrink: 0 }} />
               {[3, 6, 12].map((sz, i) => (
-                <button
-                  key={sz}
-                  onClick={() => setPenSize(sz)}
-                  style={{
-                    ...styles.toolBtn,
-                    background: penSize === sz ? '#8B5CF6' : '#F1F5F9',
-                    color: penSize === sz ? '#fff' : '#475569',
-                    border: penSize === sz ? '2px solid #8B5CF6' : '2px solid #E2E8F0',
-                    fontSize: 16, fontWeight: 700,
-                  }}
-                >{(['S', 'M', 'L'] as const)[i]}</button>
+                <button key={sz} onClick={() => setPenSize(sz)}
+                  style={{ ...dynBtn(penSize === sz, '#8B5CF6'), fontWeight: 700 }}>
+                  {(['S', 'M', 'L'] as const)[i]}
+                </button>
               ))}
             </>}
           </div>
 
           <div style={{ width: 1, alignSelf: 'stretch', background: '#E2E8F0', margin: '0 4px' }} />
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(9, ${swatchSize}px)`,
-            gap: 8,
-          }}>
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(9, ${size}px)`, gap: SG }}>
             {PALETTE.map(c => (
               <button key={c} onClick={() => setSelectedColor(c)} style={swatchBtn(c)} />
             ))}
@@ -478,19 +425,16 @@ export default function Decalcomania() {
 
           <div style={{ width: 1, alignSelf: 'stretch', background: '#E2E8F0', margin: '0 4px' }} />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: SG, flexShrink: 0 }}>
             <div style={{ position: 'relative' }}>
               <button
                 onClick={() => colorPickerRef.current?.click()}
-                onDoubleClick={() =>
-                  setCustomColors(prev => prev.includes(selectedColor) ? prev : [...prev, selectedColor])
-                }
                 style={{
-                  ...styles.toolBtn,
+                  ...dynBtn(false),
                   background: 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)',
                   border: '2px solid #E2E8F0',
                 }}
-                title="클릭: 색상 선택 / 더블클릭: 팔레트에 추가"
+                title="클릭: 색상 선택 / 캔버스 더블클릭: 해당 색상 스포이드"
               />
               <input
                 ref={colorPickerRef}
@@ -502,10 +446,10 @@ export default function Decalcomania() {
             {customColors.length > 0 && (
               <div style={{
                 display: 'grid',
-                gridTemplateRows: `repeat(2, ${swatchSize}px)`,
+                gridTemplateRows: `repeat(2, ${size}px)`,
                 gridAutoFlow: 'column',
-                gridAutoColumns: `${swatchSize}px`,
-                gap: 8,
+                gridAutoColumns: `${size}px`,
+                gap: SG,
               }}>
                 {customColors.map(c => (
                   <button key={c} onClick={() => setSelectedColor(c)} style={swatchBtn(c)} />
@@ -529,6 +473,7 @@ export default function Decalcomania() {
             onMouseMove={handleColorMouseMove}
             onMouseUp={handleColorMouseUp}
             onMouseLeave={handleColorMouseUp}
+            onDoubleClick={handleColorDoubleClick}
           />
         </div>
 
