@@ -1,99 +1,7 @@
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/useAuthStore'
 
-export default function Home() {
-  const navigate = useNavigate()
-  const isAuthenticated = useAuthStore(s => s.isAuthenticated)
-  const nickname = useAuthStore(s => s.nickname)
-  const tokenBalance = useAuthStore(s => s.tokenBalance)
-  const logout = useAuthStore(s => s.logout)
-
-  const handleLogout = () => {
-    logout()
-    navigate('/')
-  }
-
-  return (
-    <div style={s.bg}>
-      {/* 헤더 */}
-      <header style={s.header}>
-        <div style={s.logo} onClick={() => navigate('/')} role="button">
-          <span style={s.logoIcon}>🪞</span>
-          <span style={s.logoText}>Decal<b>co</b></span>
-        </div>
-
-        <div style={s.headerRight}>
-          {isAuthenticated && nickname ? (
-            <>
-              <span style={s.userGreet}>{nickname}님 안녕하세요!</span>
-              <span style={s.tokenBadge}>🎟 {tokenBalance}개</span>
-              <button style={s.logoutBtn} onClick={handleLogout}>로그아웃</button>
-            </>
-          ) : (
-            <>
-              <button style={s.loginBtn} onClick={() => navigate('/login')}>로그인</button>
-              <button style={s.signupBtn} onClick={() => navigate('/signup')}>회원가입</button>
-            </>
-          )}
-        </div>
-      </header>
-
-      {/* 메인 컨텐츠 */}
-      <main style={s.main}>
-        <h1 style={s.mainTitle}>무엇을 그려볼까요?</h1>
-        <p style={s.mainDesc}>AI와 함께 창의적인 그림을 완성해보세요.</p>
-
-        <div style={s.cards}>
-          {/* 데칼코마니 카드 */}
-          <div style={s.card} onClick={() => navigate(isAuthenticated ? '/decalcomania' : '/login')}>
-            <div style={s.cardIcon}>🪞</div>
-            <h2 style={s.cardTitle}>데칼코마니</h2>
-            <p style={s.cardDesc}>
-              절반만 그리면 AI 미러가<br />
-              반대쪽을 대칭으로 완성해줘요.
-            </p>
-            <div style={s.cardBadge}>🎟 토큰 1개 소모</div>
-            <button style={{ ...s.cardBtn, background: 'linear-gradient(135deg, #3B82F6, #6366F1)' }}>
-              시작하기 →
-            </button>
-          </div>
-
-          {/* EgAg 카드 */}
-          <div style={s.card} onClick={() => navigate(isAuthenticated ? '/canvas' : '/login')}>
-            <div style={s.cardIcon}>✏️</div>
-            <h2 style={{ ...s.cardTitle, color: '#4c1d95' }}>EgAg</h2>
-            <p style={s.cardDesc}>
-              자유롭게 그리면 AI가 맞춰보고<br />
-              동화 스타일 그림으로 변환해줘요.
-            </p>
-            <div style={{ ...s.cardBadge, color: '#7C3AED', background: '#EDE9FE', border: '1px solid #DDD6FE' }}>
-              ✨ AI 스케치 분석
-            </div>
-            <button style={{ ...s.cardBtn, background: 'linear-gradient(135deg, #7C3AED, #A855F7)' }}>
-              시작하기 →
-            </button>
-          </div>
-        </div>
-      </main>
-
-      <footer style={s.footer}>
-        <div style={s.footerContent}>
-          <div>© 2026 Decalco · AI 데칼코마니 그림판</div>
-          <div style={s.footerLinks}>
-            <Link to="/contact" style={s.footerLink}>1:1 문의하기</Link>
-            <span style={s.divider}></span>
-            <span style={s.footerItem}>이용약관</span>
-            <span style={s.divider}></span>
-            <span style={{ ...s.footerItem, fontWeight: 700 }}>개인정보처리방침</span>
-          </div>
-        </div>
-      </footer>
-    </div>
-  )
-}
-
-// ─── 스타일 ──────────────────────────────────────────────
-// 1. 스타일 객체 (중복 제거 및 최상단 배치)
+// ─── 스타일 설정 ──────────────────────────────────────────
 const s: Record<string, React.CSSProperties> = {
   bg: {
     minHeight: '100vh',
@@ -183,7 +91,7 @@ const s: Record<string, React.CSSProperties> = {
   footerLinks: {
     display: 'flex',
     justifyContent: 'center',
-    alignItems: 'center', // 'align-items'를 'alignItems'로 수정
+    alignItems: 'center',
     gap: '12px',
   },
   footerLink: {
@@ -204,7 +112,6 @@ const s: Record<string, React.CSSProperties> = {
 
 export default function Home() {
   const navigate = useNavigate()
-  // useAuthStore의 상태 구독
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
   const nickname = useAuthStore(s => s.nickname)
   const tokenBalance = useAuthStore(s => s.tokenBalance)
@@ -217,6 +124,7 @@ export default function Home() {
 
   return (
       <div style={s.bg}>
+        {/* 헤더 */}
         <header style={s.header}>
           <div style={s.logo} onClick={() => navigate('/')} role="button">
             <span style={s.logoIcon}>🪞</span>
@@ -239,6 +147,7 @@ export default function Home() {
           </div>
         </header>
 
+        {/* 메인 컨텐츠 */}
         <main style={s.main}>
           <h1 style={s.mainTitle}>무엇을 그려볼까요?</h1>
           <p style={s.mainDesc}>AI와 함께 창의적인 그림을 완성해보세요.</p>
@@ -276,7 +185,19 @@ export default function Home() {
           </div>
         </main>
 
-        <footer style={s.footer}>© 2025 Decalco · AI 데칼코마니 그림판</footer>
+        {/* 푸터 영역 */}
+        <footer style={s.footer}>
+          <div style={s.footerContent}>
+            <div>© 2026 Decalco · AI 데칼코마니 그림판</div>
+            <div style={s.footerLinks}>
+              <Link to="/contact" style={s.footerLink}>1:1 문의하기</Link>
+              <span style={s.divider}></span>
+              <span style={s.footerItem}>이용약관</span>
+              <span style={s.divider}></span>
+              <span style={{ ...s.footerItem, fontWeight: 700 }}>개인정보처리방침</span>
+            </div>
+          </div>
+        </footer>
       </div>
   )
 }
