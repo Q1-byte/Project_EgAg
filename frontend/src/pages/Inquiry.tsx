@@ -1,4 +1,5 @@
 import { useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom'; // 뒤로가기 추가
 import axios, { AxiosError } from 'axios';
 import { useAuthStore } from '../stores/useAuthStore';
 
@@ -17,6 +18,7 @@ const faqData = [
 ] as const;
 
 export const Inquiry = () => {
+    const navigate = useNavigate();
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
     const userId = useAuthStore((state) => state.userId);
 
@@ -29,6 +31,28 @@ export const Inquiry = () => {
     const [file, setFile] = useState<File | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [openId, setOpenId] = useState<number | null>(null);
+
+    // ⭐ 1. Top 버튼 표시 상태 추가
+    const [showTopBtn, setShowTopBtn] = useState(false);
+
+    // ⭐ 2. 스크롤 감지 및 Top 버튼 제어
+    useEffect(() => {
+        const handleScroll = () => {
+            if (window.scrollY > 400) { // 400px 이상 내리면 표시
+                setShowTopBtn(true);
+            } else {
+                setShowTopBtn(false);
+            }
+        };
+
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
+
+    // ⭐ 3. 위로 가기 함수
+    const scrollToTop = () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
     useEffect(() => {
         if (isAuthenticated && userId) {
@@ -73,128 +97,195 @@ export const Inquiry = () => {
 
     return (
         <div style={s.container}>
-            <header style={s.titleSection}>
-                <h1 style={s.title}>문의하기</h1>
-                <p style={s.subtitle}>궁금한 점이나 불편한 사항을 알려주시면 친절히 답변해 드리겠습니다.</p>
-            </header>
+            <div style={s.card}>
+                {/* 닫기 버튼 */}
+                <button
+                    onClick={() => navigate(-1)}
+                    style={s.closeButton}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F5F3FF')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                >
+                    ✕
+                </button>
 
-            <section style={s.formCard}>
-                <h2 style={s.sectionTitle}>📧 1:1 문의 접수</h2>
-                <form onSubmit={handleSubmit}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-                        <div style={s.formGroup}>
-                            <label style={s.label}>문의 유형</label>
-                            <select
-                                style={s.input}
-                                value={formData.category}
-                                onChange={(e) => setFormData({...formData, category: e.target.value})}
-                            >
-                                <option>결제 문제</option>
-                                <option>버그 신고</option>
-                                <option>기능 제안</option>
-                                <option>기타</option>
-                            </select>
+                {/* ⭐ 4. Top 버튼 구현 (삼항 연산자로 조건부 렌더링) */}
+                <button
+                    onClick={scrollToTop}
+                    style={{
+                        ...s.topButton,
+                        opacity: showTopBtn ? 1 : 0,
+                        pointerEvents: showTopBtn ? 'auto' : 'none'
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-5px)';
+                        e.currentTarget.style.backgroundColor = '#F5F3FF';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+                    }}
+                >
+                    UP 🐣
+                </button>
+
+                <header style={s.header}>
+                    <span style={s.icon}>🐣</span>
+                    <h1 style={s.title}>문의하기</h1>
+                    <p style={s.meta}>궁금한 점이나 불편한 사항을 알려주세요!</p>
+                </header>
+
+                <div style={s.divider} />
+
+                {/* 1:1 문의 섹션 */}
+                <section style={{ marginBottom: '60px' }}>
+                    <h2 style={s.sectionTitle}>📧 1:1 문의 접수</h2>
+                    <form onSubmit={handleSubmit}>
+                        <div style={s.gridGroup}>
+                            <div style={s.formGroup}>
+                                <label style={s.label}>문의 유형</label>
+                                <select
+                                    style={s.input}
+                                    value={formData.category}
+                                    onChange={(e) => setFormData({...formData, category: e.target.value})}
+                                >
+                                    <option>결제 문제</option>
+                                    <option>버그 신고</option>
+                                    <option>기능 제안</option>
+                                    <option>기타</option>
+                                </select>
+                            </div>
+                            <div style={s.formGroup}>
+                                <label style={s.label}>답변 받을 이메일</label>
+                                <input
+                                    type="email"
+                                    style={s.input}
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                    required
+                                />
+                            </div>
                         </div>
+
                         <div style={s.formGroup}>
-                            <label style={s.label}>답변 받을 이메일</label>
+                            <label style={s.label}>제목</label>
                             <input
-                                type="email"
+                                type="text"
                                 style={s.input}
-                                value={formData.email}
-                                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                placeholder="제목을 입력해주세요."
+                                value={formData.title}
+                                onChange={(e) => setFormData({...formData, title: e.target.value})}
                                 required
                             />
                         </div>
-                    </div>
 
-                    <div style={s.formGroup}>
-                        <label style={s.label}>제목</label>
-                        <input
-                            type="text"
-                            style={s.input}
-                            placeholder="제목을 입력해주세요."
-                            value={formData.title}
-                            onChange={(e) => setFormData({...formData, title: e.target.value})}
-                            required
-                        />
-                    </div>
-
-                    <div style={s.formGroup}>
-                        <label style={s.label}>상세 내용</label>
-                        <textarea
-                            style={s.textarea}
-                            placeholder="내용을 상세히 입력해주세요."
-                            value={formData.content}
-                            onChange={(e) => setFormData({...formData, content: e.target.value})}
-                            required
-                        ></textarea>
-                    </div>
-
-                    <div style={{ ...s.formGroup, border: '2px dashed #E2E8F0', padding: '20px', borderRadius: '12px', textAlign: 'center' }}>
-                        <input type="file" onChange={handleFileChange} accept="image/*" />
-                        <p style={{ fontSize: '12px', color: '#94A3B8', marginTop: '8px' }}>최대 5MB, JPG · PNG · GIF</p>
-                    </div>
-
-                    <button type="submit" disabled={isLoading} style={s.submitBtn}>
-                        {isLoading ? "전송 중..." : "문의 접수하기"}
-                    </button>
-                </form>
-            </section>
-
-            <section>
-                <h2 style={s.sectionTitle}>❓ 자주 묻는 질문 (FAQ)</h2>
-                <div style={s.faqSection}>
-                    {faqData.map((faq) => (
-                        <div key={faq.id} style={s.faqItem}>
-                            <div style={s.faqQuestion} onClick={() => toggleFaq(faq.id)}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <span style={{ fontSize: '12px', fontWeight: 'bold', background: '#EFF6FF', color: '#1D4ED8', padding: '4px 8px', borderRadius: '6px' }}>
-                                        {faq.category}
-                                    </span>
-                                    <span>{faq.question}</span>
-                                </div>
-                                <span style={{
-                                    transform: openId === faq.id ? 'rotate(180deg)' : 'rotate(0deg)',
-                                    transition: 'transform 0.3s',
-                                    color: '#3B82F6'
-                                }}>▼</span>
-                            </div>
-                            <div style={{
-                                maxHeight: openId === faq.id ? '500px' : '0',
-                                overflow: 'hidden',
-                                transition: 'max-height 0.3s ease-in-out',
-                                background: '#F8FAFC'
-                            }}>
-                                <div style={s.faqAnswer}>
-                                    <strong style={{ color: '#1D4ED8', display: 'block', marginBottom: '4px' }}>A.</strong>
-                                    {faq.answer}
-                                </div>
-                            </div>
+                        <div style={s.formGroup}>
+                            <label style={s.label}>상세 내용</label>
+                            <textarea
+                                style={s.textarea}
+                                placeholder="내용을 상세히 입력해주세요."
+                                value={formData.content}
+                                onChange={(e) => setFormData({...formData, content: e.target.value})}
+                                required
+                            ></textarea>
                         </div>
-                    ))}
-                </div>
-            </section>
+
+                        <div style={s.fileUpload}>
+                            <input type="file" onChange={handleFileChange} accept="image/*" />
+                            <p style={{ fontSize: '12px', color: '#94A3B8', marginTop: '8px' }}>최대 5MB, JPG · PNG · GIF</p>
+                        </div>
+
+                        <button type="submit" disabled={isLoading} style={s.submitBtn}>
+                            {isLoading ? "전송 중..." : "문의 접수하기"}
+                        </button>
+                    </form>
+                </section>
+
+                <div style={s.divider} />
+
+                {/* FAQ 섹션 */}
+                <section>
+                    <h2 style={s.sectionTitle}>❓ 자주 묻는 질문 (FAQ)</h2>
+                    <div style={s.faqSection}>
+                        {faqData.map((faq) => (
+                            <div key={faq.id} style={s.faqItem}>
+                                <div style={s.faqQuestion} onClick={() => toggleFaq(faq.id)}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <span style={s.categoryBadge}>{faq.category}</span>
+                                        <span>{faq.question}</span>
+                                    </div>
+                                    <span style={{
+                                        transform: openId === faq.id ? 'rotate(180deg)' : 'rotate(0deg)',
+                                        transition: 'transform 0.3s',
+                                        color: '#7C3AED'
+                                    }}>▼</span>
+                                </div>
+                                <div style={{
+                                    maxHeight: openId === faq.id ? '500px' : '0',
+                                    overflow: 'hidden',
+                                    transition: 'max-height 0.3s ease-in-out',
+                                }}>
+                                    <div style={s.faqAnswer}>
+                                        <strong style={{ color: '#7C3AED', display: 'block', marginBottom: '4px' }}>A.</strong>
+                                        {faq.answer}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            </div>
         </div>
     );
 };
 
-export default Inquiry;
-
-// 스타일 객체는 기존에 주신 것과 동일하게 유지됩니다.
+// 🌌 스타일 업데이트
 const s: Record<string, React.CSSProperties> = {
-    container: { maxWidth: '800px', margin: '0 auto', padding: '60px 24px', fontFamily: 'inherit', color: '#334155' },
-    titleSection: { textAlign: 'center', marginBottom: '48px' },
-    title: { fontSize: '32px', fontWeight: 800, color: '#0F172A', marginBottom: '8px' },
-    subtitle: { fontSize: '16px', color: '#64748B' },
-    sectionTitle: { fontSize: '20px', fontWeight: 700, color: '#1D4ED8', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' },
-    formCard: { background: '#fff', borderRadius: '20px', padding: '32px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid #F1F5F9', marginBottom: '60px' },
+    // ... 이전 스타일 유지
+    container: { minHeight: '100vh', background: 'linear-gradient(135deg, #FDECF2 0%, #E0E7FF 50%, #F5F3FF 100%)', padding: '60px 20px', display: 'flex', justifyContent: 'center' },
+    card: { backgroundColor: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(10px)', maxWidth: '850px', width: '100%', borderRadius: '40px', padding: '60px 50px', boxShadow: '0 10px 25px rgba(165, 180, 252, 0.15)', border: '2px solid #FFFFFF', position: 'relative' },
+    closeButton: { position: 'absolute', top: '30px', right: '30px', width: '40px', height: '40px', borderRadius: '50%', border: 'none', backgroundColor: 'transparent', fontSize: '20px', color: '#7C3AED', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease' },
+
+    // ⭐ 추가된 Top 버튼 스타일
+    topButton: {
+        position: 'fixed',
+        bottom: '20px',    // 하단 여백은 안정감 있게 유지
+        right: '-75px',     // ⭐ 우측 여백을 10px로 더 바짝 밀착!
+
+        width: '55px',
+        height: '55px',
+        borderRadius: '50%',
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        border: '2px solid #DDD6FE',
+        color: '#7C3AED',
+        fontSize: '13px',
+        fontWeight: 800,
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: '0 8px 20px rgba(139, 92, 246, 0.2)',
+        transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+        zIndex: 1000,
+    },
+
+    header: { textAlign: 'center', marginBottom: '50px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' },
+    icon: { fontSize: '64px', marginBottom: '10px', filter: 'drop-shadow(0 0 8px rgba(139, 92, 246, 0.3))' },
+    title: { fontSize: '32px', fontWeight: 800, color: '#5B21B6', margin: '10px 0' },
+    meta: { fontSize: '15px', color: '#7C3AED', fontWeight: 600, opacity: 0.8 },
+    divider: { height: '2px', background: 'linear-gradient(to right, transparent, #DDD6FE, transparent)', margin: '40px 0' },
+    sectionTitle: { fontSize: '22px', fontWeight: 800, color: '#5B21B6', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' },
+    gridGroup: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' },
     formGroup: { marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '8px' },
-    label: { fontSize: '14px', fontWeight: 600, color: '#475569' },
-    input: { padding: '12px 16px', borderRadius: '10px', border: '1px solid #E2E8F0', fontSize: '15px', outline: 'none' },
-    textarea: { padding: '12px 16px', borderRadius: '10px', border: '1px solid #E2E8F0', fontSize: '15px', minHeight: '150px', resize: 'vertical', outline: 'none' },
-    submitBtn: { width: '100%', padding: '14px', background: 'linear-gradient(135deg, #3B82F6, #6366F1)', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', marginTop: '10px' },
-    faqSection: { display: 'flex', flexDirection: 'column', gap: '12px' },
-    faqItem: { background: '#fff', borderRadius: '12px', overflow: 'hidden', border: '1px solid #E2E8F0' },
-    faqQuestion: { padding: '18px 24px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 600, color: '#1E293B' },
-    faqAnswer: { padding: '18px 24px', color: '#475569', fontSize: '14px', lineHeight: 1.6, borderTop: '1px solid #F1F5F9' }
+    label: { fontSize: '14px', fontWeight: 700, color: '#4C1D95', paddingLeft: '4px' },
+    input: { padding: '14px 16px', borderRadius: '15px', border: '1px solid #DDD6FE', fontSize: '15px', outline: 'none', backgroundColor: 'rgba(255,255,255,0.5)' },
+    textarea: { padding: '14px 16px', borderRadius: '15px', border: '1px solid #DDD6FE', fontSize: '15px', minHeight: '150px', resize: 'vertical', outline: 'none', backgroundColor: 'rgba(255,255,255,0.5)' },
+    fileUpload: { border: '2px dashed #DDD6FE', padding: '30px', borderRadius: '20px', textAlign: 'center', marginBottom: '30px' },
+    submitBtn: { width: '100%', padding: '16px', background: 'linear-gradient(135deg, #8B5CF6, #6366F1)', color: '#fff', border: 'none', borderRadius: '15px', fontSize: '17px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)' },
+    faqSection: { display: 'flex', flexDirection: 'column', gap: '15px' },
+    faqItem: { background: 'rgba(255, 255, 255, 0.5)', borderRadius: '18px', overflow: 'hidden', border: '1px solid #DDD6FE' },
+    faqQuestion: { padding: '20px 25px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700, color: '#4C1D95' },
+    faqAnswer: { padding: '20px 25px', color: '#4C1D95', fontSize: '15px', lineHeight: 1.7, background: 'rgba(245, 243, 255, 0.5)' },
+    categoryBadge: { fontSize: '12px', fontWeight: 800, background: '#F5F3FF', color: '#7C3AED', padding: '4px 10px', borderRadius: '8px', border: '1px solid #DDD6FE' }
 };
+
+export default Inquiry;
