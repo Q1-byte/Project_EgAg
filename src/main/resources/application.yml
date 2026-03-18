@@ -85,6 +85,16 @@ kakao:
   client-id: ${KAKAO_CLIENT_ID:}
   redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:8080/api/auth/kakao/callback}
 
+# KakaoPay (결제)
+kakaopay:
+  secret-key: ${KAKAOPAY_SECRET_KEY:}
+  cid: ${KAKAOPAY_CID:TC0ONETIME}
+
+# Portone (결제)
+portone:
+  api-key: ${PORTONE_API_KEY:}
+  api-secret: ${PORTONE_API_SECRET:}
+
 # Resend (이메일 발송)
 resend:
   api-key: ${RESEND_API_KEY:}

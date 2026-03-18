@@ -26,6 +26,11 @@ const s: Record<string, React.CSSProperties> = {
     background: '#EFF6FF', border: '1px solid #BFDBFE',
     borderRadius: 20, padding: '4px 14px',
   },
+  chargeBtn: {
+    fontSize: 13, fontWeight: 700, color: '#2563EB',
+    background: '#EFF6FF', border: '1px solid #BFDBFE',
+    borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
+  },
   logoutBtn: {
     fontSize: 13, fontWeight: 600, color: '#64748B',
     background: 'none', border: '1px solid #CBD5E1',
@@ -136,6 +141,7 @@ export default function Home() {
                 <>
                   <span style={s.userGreet}>{nickname}님 안녕하세요!</span>
                   <span style={s.tokenBadge}>🎟 {tokenBalance}개</span>
+                  <button style={s.chargeBtn} onClick={() => navigate('/token-shop')}>💳 토큰 충전</button>
                   <button style={s.logoutBtn} onClick={handleLogout}>로그아웃</button>
                 </>
             ) : (
@@ -154,7 +160,11 @@ export default function Home() {
 
           <div style={s.cards}>
             {/* 데칼코마니 카드 */}
-            <div style={s.card} onClick={() => navigate(isAuthenticated ? '/decalcomania' : '/login')}>
+            <div style={s.card} onClick={() => {
+              if (!isAuthenticated) { navigate('/login'); return }
+              if (tokenBalance <= 0) { navigate('/token-shop'); return }
+              navigate('/decalcomania')
+            }}>
               <div style={s.cardIcon}>🪞</div>
               <h2 style={s.cardTitle}>데칼코마니</h2>
               <p style={s.cardDesc}>
@@ -168,7 +178,11 @@ export default function Home() {
             </div>
 
             {/* EgAg 카드 */}
-            <div style={s.card} onClick={() => navigate(isAuthenticated ? '/canvas' : '/login')}>
+            <div style={s.card} onClick={() => {
+              if (!isAuthenticated) { navigate('/login'); return }
+              if (tokenBalance <= 0) { navigate('/token-shop'); return }
+              navigate('/canvas')
+            }}>
               <div style={s.cardIcon}>✏️</div>
               <h2 style={{ ...s.cardTitle, color: '#4c1d95' }}>EgAg</h2>
               <p style={s.cardDesc}>

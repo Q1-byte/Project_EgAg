@@ -48,6 +48,8 @@ public class SecurityConfig {
 
                         // 3. 나머지 설정 유지
                         .requestMatchers("/api/payments/webhook").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/payments/packages").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/payments/kakaopay/approve").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()

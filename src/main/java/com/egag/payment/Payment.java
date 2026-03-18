@@ -22,7 +22,7 @@ public class Payment {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "imp_uid", unique = true, nullable = false)
+    @Column(name = "imp_uid", unique = true)
     private String impUid;
 
     @Column(name = "merchant_uid", unique = true, nullable = false)
