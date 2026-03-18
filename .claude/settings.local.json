@@ -8,7 +8,12 @@
       "Bash(java -version 2>&1)",
       "WebSearch",
       "Bash(./gradlew build 2>&1)",
-      "Bash(cd /Users/qone/Desktop/Sketch/egag/frontend && npm run build 2>&1)"
+      "Bash(cd /Users/qone/Desktop/Sketch/egag/frontend && npm run build 2>&1)",
+      "Bash(git merge origin/develop --no-edit 2>&1 | head -20)",
+      "Bash(git checkout --ours frontend/src/api/canvas.ts frontend/src/pages/Canvas.tsx src/main/java/com/egag/canvas/CanvasController.java && git add frontend/src/api/canvas.ts frontend/src/pages/Canvas.tsx src/main/java/com/egag/canvas/CanvasController.java && git rm -f frontend/src/stores/useAuthStore.ts frontend/src/stores/useCanvasStore.ts src/main/java/com/egag/canvas/CanvasService.java src/main/java/com/egag/canvas/StrokeAgent.java src/main/java/com/egag/user/UserRepository.java 2>/dev/null; git add src/main/java/com/egag/auth/SecurityConfig.java; echo \"done\")",
+      "Bash(git add src/main/java/com/egag/auth/JwtTokenProvider.java && git status --short | grep \"^UU\\\\|^AA\\\\|^DU\\\\|^UD\")",
+      "Bash(git commit --no-edit 2>&1)",
+      "Bash(git push origin gyuwon_1:develop 2>&1)"
     ]
   }
 }
