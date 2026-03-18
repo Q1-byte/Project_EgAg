@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuthStore } from '../stores/useAuthStore'
 
@@ -6,8 +6,12 @@ export default function OAuthCallback() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const setAuth = useAuthStore(s => s.setAuth)
+  const processed = useRef(false)
 
   useEffect(() => {
+    if (processed.current) return
+    processed.current = true
+
     const accessToken = searchParams.get('accessToken')
     const refreshToken = searchParams.get('refreshToken')
     const userId = searchParams.get('userId')

@@ -7,6 +7,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/auth/kakao")
@@ -32,14 +35,22 @@ public class KakaoAuthController {
      * GET /api/auth/kakao/callback?code=...
      */
     @GetMapping("/callback")
-    public RedirectView kakaoCallback(@RequestParam String code) {
+    public RedirectView kakaoCallback(
+            @RequestParam(required = false) String code,
+            @RequestParam(required = false) String error) {
+        log.info("카카오 콜백 수신 - code: {}, error: {}", code != null ? "있음" : "없음", error);
+        if (error != null || code == null) {
+            log.error("카카오 인증 실패, error: {}", error);
+            return new RedirectView(appBaseUrl + "/login?error=kakao_failed");
+        }
         try {
             TokenResponse token = kakaoAuthService.kakaoLogin(code);
+            log.info("카카오 로그인 성공, userId: {}, nickname: {}", token.getUserId(), token.getNickname());
             String redirectUrl = appBaseUrl + "/oauth/callback"
                     + "?accessToken=" + token.getAccessToken()
                     + "&refreshToken=" + token.getRefreshToken()
                     + "&userId=" + token.getUserId()
-                    + "&nickname=" + token.getNickname()
+                    + "&nickname=" + URLEncoder.encode(token.getNickname(), StandardCharsets.UTF_8)
                     + "&tokenBalance=" + token.getTokenBalance();
             return new RedirectView(redirectUrl);
         } catch (Exception e) {

@@ -28,8 +28,9 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // 5. UserDetailsService 등록 (본인 코드에서 가져옴)
                 .userDetailsService(authService)
                 .authorizeHttpRequests(auth -> auth
                         // 팀원 코드의 상세한 설정들 유지

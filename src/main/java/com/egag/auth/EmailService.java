@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Slf4j
-@Service
+@Service("authEmailService")
 public class EmailService {
 
     @Value("${resend.api-key}")
