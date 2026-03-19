@@ -309,7 +309,7 @@ export default function Decalcomania() {
   // ─── 로딩 화면 ────────────────────────────────────────
   if (phase === 'confirm') {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0fdf4 100%)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'linear-gradient(135deg, #eff8ff 0%, #dbeafe 50%, #eff8ff 100%)' }}>
         <img src="/Egag_logo-removebg.png" alt="EgAg" style={{ height: 100, marginBottom: 16 }} />
         <p style={{ fontSize: 16, color: '#7dd3fc', fontWeight: 600 }}>준비 중...</p>
       </div>
@@ -342,10 +342,10 @@ export default function Decalcomania() {
         }
       `}</style>
 
-      <div style={{ height: '100vh', overflow: 'hidden', background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0fdf4 100%)', display: 'flex', flexDirection: 'column', fontFamily: "'Segoe UI', sans-serif", position: 'relative' }}>
+      <div style={{ height: '100vh', overflow: 'hidden', background: 'linear-gradient(135deg, #eff8ff 0%, #dbeafe 50%, #eff8ff 100%)', display: 'flex', flexDirection: 'column', fontFamily: "'Segoe UI', sans-serif", position: 'relative' }}>
 
         {/* ── 툴바 ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 20px', background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0fdf4 100%)', borderBottom: '1.5px solid rgba(186,230,255,0.5)', flexWrap: 'wrap', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 20px', background: 'linear-gradient(135deg, #eff8ff 0%, #dbeafe 50%, #eff8ff 100%)', borderBottom: '1.5px solid rgba(147,197,253,0.6)', flexWrap: 'wrap', flexShrink: 0 }}>
 
           {/* 로고 */}
           <img src="/Egag_logo-removebg.png" alt="EgAg" className="cv-logo" style={{ height: 100, cursor: 'pointer', marginRight: 4 }} onClick={() => setShowExitConfirm(true)} />

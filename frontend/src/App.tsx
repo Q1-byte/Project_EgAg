@@ -16,6 +16,7 @@ import KakaoOnboarding from './pages/KakaoOnboarding'
 import Policy from './pages/Policy'
 import TokenShop from './pages/TokenShop'
 import MyPage from './pages/MyPage'
+import TimeAttack from './pages/TimeAttack'
 
 // 어드민 컴포넌트들
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -52,6 +53,7 @@ function App() {
                 <Route path="/canvas/:id" element={<Canvas />} />
                 <Route path="/decalcomania" element={<Decalcomania />} />
                 <Route path="/decalcomania/:id" element={<Decalcomania />} />
+                <Route path="/time-attack" element={<TimeAttack />} />
 
                 {/* 준비 중인 페이지들 */}
                 <Route path="/gallery" element={<div>Gallery</div>} />

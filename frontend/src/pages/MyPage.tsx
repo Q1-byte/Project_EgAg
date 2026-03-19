@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/useAuthStore'
+import Header from '../components/Header'
 import { getMyProfile, updateMyProfile, changePassword, getMyArtworks, uploadProfilePhoto } from '../api/user'
 import type { UserProfile, ArtworkSummary } from '../api/user'
 
@@ -105,22 +106,7 @@ export default function MyPage() {
 
   return (
     <div style={s.bg}>
-      {/* 헤더 */}
-      <header style={s.header}>
-        <div style={s.logo} onClick={() => navigate('/')} role="button">
-          <img src="/Egag_logo-removebg.png" alt="EgAg" style={{ height: 110 }} />
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {isAuthenticated && nickname && (
-            <span style={s.userGreet}>{nickname}님 안녕하세요!</span>
-          )}
-          <span style={s.tokenBadge} onClick={() => navigate('/token-shop')} role="button">
-            🎟 {tokenBalance}개 보유 중
-          </span>
-          <button style={s.navBtn} onClick={() => navigate(-1)}>← 돌아가기</button>
-          <button style={{ ...s.navBtn, color: '#c47a8a', borderColor: '#e8c0cc' }} onClick={handleLogout}>로그아웃</button>
-        </div>
-      </header>
+      <Header />
 
       <main style={s.main}>
         <h1 style={s.title}>마이페이지</h1>
