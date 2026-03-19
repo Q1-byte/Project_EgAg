@@ -36,6 +36,7 @@ export default function Login() {
     setErrors({})
     try {
       const res = await login(email, password)
+      if (res.refreshToken) localStorage.setItem('refreshToken', res.refreshToken)
       setAuth(res.userId, res.nickname, res.tokenBalance, res.accessToken)
       navigate('/')
     } catch (err: any) {
@@ -59,8 +60,7 @@ export default function Login() {
       <div style={s.card}>
         {/* 로고 */}
         <div style={s.logo} onClick={() => navigate('/')}>
-          <span style={s.logoIcon}>🪞</span>
-          <span style={s.logoText}>Decal<b>co</b></span>
+          <img src="/Egag_logo-removebg.png" alt="EgAg" style={{ height: 48 }} />
         </div>
 
         <h1 style={s.title}>로그인</h1>
