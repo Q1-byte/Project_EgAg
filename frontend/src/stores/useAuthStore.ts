@@ -8,6 +8,9 @@ interface AuthState {
   accessToken: string | null
   isAuthenticated: boolean
   setAuth: (userId: string, nickname: string, role: string, tokenBalance: number, accessToken: string) => void
+  needsOnboarding: boolean
+  setAuth: (userId: string, nickname: string, tokenBalance: number, accessToken: string) => void
+  setNeedsOnboarding: (value: boolean) => void
   setTokenBalance: (balance: number) => void
   logout: () => void
 }
@@ -28,8 +31,20 @@ const getInitialAuth = () => {
 };
 
 const initialAuth = getInitialAuth();
+const storedToken = localStorage.getItem('accessToken')
+const storedUserId = localStorage.getItem('userId')
+const storedNickname = localStorage.getItem('nickname')
+const storedBalance = localStorage.getItem('tokenBalance')
+const storedNeedsOnboarding = localStorage.getItem('needsOnboarding') === 'true'
 
 export const useAuthStore = create<AuthState>((set) => ({
+  userId: storedUserId,
+  nickname: storedNickname,
+  tokenBalance: storedBalance ? parseInt(storedBalance) : 0,
+  accessToken: storedToken,
+  isAuthenticated: !!storedToken,
+  needsOnboarding: storedNeedsOnboarding,
+  setAuth: (userId, nickname, tokenBalance, accessToken) => {
   ...initialAuth,
 
   setAuth: (userId, nickname, role, tokenBalance, accessToken) => {
@@ -47,6 +62,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       accessToken,
       isAuthenticated: true
     })
+  },
+  setNeedsOnboarding: (value) => {
+    if (value) localStorage.setItem('needsOnboarding', 'true')
+    else localStorage.removeItem('needsOnboarding')
+    set({ needsOnboarding: value })
   },
 
   setTokenBalance: (balance) => {
@@ -71,5 +91,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       accessToken: null,
       isAuthenticated: false
     })
+    localStorage.removeItem('needsOnboarding')
+    set({ userId: null, nickname: null, tokenBalance: 0, accessToken: null, isAuthenticated: false, needsOnboarding: false })
   },
 }))

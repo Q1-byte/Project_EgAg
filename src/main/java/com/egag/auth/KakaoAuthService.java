@@ -184,5 +184,10 @@ public class KakaoAuthService {
                 user.getRole(),    // 👈 이 줄이 추가되었습니다!
                 user.getTokenBalance()
         );
+        boolean needsOnboarding = (user.getName() == null || user.getName().isBlank())
+                || (user.getPhone() == null || user.getPhone().isBlank());
+
+        return new TokenResponse(accessToken, refreshToken.getToken(),
+                user.getId(), user.getNickname(), user.getTokenBalance(), needsOnboarding);
     }
 }

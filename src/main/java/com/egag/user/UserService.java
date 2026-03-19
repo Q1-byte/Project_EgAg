@@ -54,6 +54,29 @@ public class UserService {
     }
 
     @Transactional
+    public UserProfileResponse completeOnboarding(String email, OnboardingRequest req) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        if (req.getName() != null && !req.getName().isBlank()) {
+            user.setName(req.getName());
+        }
+        if (req.getPhone() != null && !req.getPhone().isBlank()) {
+            user.setPhone(req.getPhone());
+        }
+        // 카카오 임시 이메일인 경우 실제 이메일로 교체
+        if (req.getEmail() != null && !req.getEmail().isBlank()
+                && user.getEmail().endsWith("@kakao.local")) {
+            if (userRepository.existsByEmail(req.getEmail())) {
+                throw new RuntimeException("이미 사용 중인 이메일입니다.");
+            }
+            user.setEmail(req.getEmail());
+        }
+
+        return new UserProfileResponse(userRepository.save(user));
+    }
+
+    @Transactional
     public void changePassword(String email, ChangePasswordRequest req) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));

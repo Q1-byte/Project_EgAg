@@ -6,6 +6,7 @@ export default function OAuthCallback() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const setAuth = useAuthStore(s => s.setAuth)
+  const setNeedsOnboarding = useAuthStore(s => s.setNeedsOnboarding)
   const processed = useRef(false)
 
   useEffect(() => {
@@ -18,10 +19,17 @@ export default function OAuthCallback() {
     const nickname = searchParams.get('nickname')
     const tokenBalance = searchParams.get('tokenBalance')
 
+    const needsOnboarding = searchParams.get('needsOnboarding') === 'true'
+
     if (accessToken && userId && nickname && tokenBalance) {
       if (refreshToken) localStorage.setItem('refreshToken', refreshToken)
       setAuth(userId, nickname, parseInt(tokenBalance), accessToken)
-      navigate('/', { replace: true })
+      setNeedsOnboarding(needsOnboarding)
+      if (needsOnboarding) {
+        navigate('/kakao-onboarding', { replace: true })
+      } else {
+        navigate('/', { replace: true })
+      }
     } else {
       navigate('/login?error=oauth_failed', { replace: true })
     }

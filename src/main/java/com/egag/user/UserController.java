@@ -47,6 +47,14 @@ public class UserController {
         return ResponseEntity.ok(userService.uploadProfilePhoto(auth.getName(), file));
     }
 
+    /** 카카오 로그인 온보딩 (이름, 전화번호, 이메일 입력) */
+    @PostMapping("/me/onboarding")
+    public ResponseEntity<UserProfileResponse> completeOnboarding(
+            Authentication auth,
+            @RequestBody OnboardingRequest req) {
+        return ResponseEntity.ok(userService.completeOnboarding(auth.getName(), req));
+    }
+
     /** 내 갤러리 (내 작품 목록) */
     @GetMapping("/me/artworks")
     public ResponseEntity<List<ArtworkSummary>> getMyArtworks(Authentication auth) {

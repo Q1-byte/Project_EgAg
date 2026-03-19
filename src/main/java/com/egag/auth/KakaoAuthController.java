@@ -51,7 +51,8 @@ public class KakaoAuthController {
                     + "&refreshToken=" + token.getRefreshToken()
                     + "&userId=" + token.getUserId()
                     + "&nickname=" + URLEncoder.encode(token.getNickname(), StandardCharsets.UTF_8)
-                    + "&tokenBalance=" + token.getTokenBalance();
+                    + "&tokenBalance=" + token.getTokenBalance()
+                    + "&needsOnboarding=" + token.isNeedsOnboarding();
             return new RedirectView(redirectUrl);
         } catch (Exception e) {
             log.error("카카오 로그인 실패: {}", e.getMessage(), e);

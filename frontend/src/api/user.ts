@@ -42,5 +42,8 @@ export const uploadProfilePhoto = (file: File) => {
   }).then(res => res.data)
 }
 
+export const completeOnboarding = (data: { name: string; phone: string; email?: string }) =>
+  client.post<UserProfile>('/users/me/onboarding', data).then(res => res.data)
+
 export const getMyArtworks = () =>
   client.get<ArtworkSummary[]>('/users/me/artworks').then(res => res.data)
