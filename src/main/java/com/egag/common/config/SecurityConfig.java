@@ -36,6 +36,7 @@ public class SecurityConfig {
                         // 1. 기존 팀원 코드 유지
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/auth/kakao/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/canvas/transform").authenticated()
                         .requestMatchers("/api/canvas/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/artworks/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/{id}").permitAll()

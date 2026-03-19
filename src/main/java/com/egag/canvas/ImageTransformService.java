@@ -26,17 +26,15 @@ public class ImageTransformService {
     private static final String VISION_MODEL = "gpt-4o";
 
     private static final Map<String, String> STYLE_PROMPTS = Map.of(
-            "watercolor", "watercolor painting style, soft wet brushstrokes, flowing colors that bleed into each other, white paper showing through, translucent layers, artistic and dreamy atmosphere, delicate and fluid",
-            "cartoon", "cartoon illustration style, clean bold black outlines, flat bright colors, cute and expressive, 2D animated look, similar to modern animated movies, simple but charming",
-            "oil_painting", "oil painting style, thick impasto brushstrokes, rich saturated colors, dramatic lighting and shadows, classical fine art composition, painterly texture, museum quality",
-            "pencil_sketch", "detailed pencil sketch style, fine graphite lines, realistic cross-hatching shading, subtle tonal gradients, clean white background, professional illustration quality"
+            "cartoon", "cartoon illustration style, clean bold black outlines, flat bright vivid colors, cute and expressive characters, 2D animated look, similar to modern children's animated TV shows, simple but charming, child-friendly and playful",
+            "fairytale", "children's storybook illustration style, soft watercolor textures, warm pastel palette, gentle brushstrokes, whimsical and magical atmosphere, like a beautifully illustrated fairy tale picture book, dreamy and heartwarming",
+            "pixar_3d", "Pixar-style 3D CGI illustration, smooth rounded shapes, subsurface scattering skin, vibrant saturated colors, cinematic lighting with soft shadows, highly detailed and polished, cute exaggerated proportions, like a frame from a Pixar animated movie"
     );
 
     private static final Map<String, String> STYLE_NAMES = Map.of(
-            "watercolor", "수채화",
             "cartoon", "카툰",
-            "oil_painting", "유화",
-            "pencil_sketch", "연필 스케치"
+            "fairytale", "동화",
+            "pixar_3d", "마법 3D"
     );
 
     public Map<String, String> identifySubject(String canvasBase64) {
