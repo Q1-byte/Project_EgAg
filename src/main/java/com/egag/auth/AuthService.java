@@ -168,8 +168,10 @@ public class AuthService implements UserDetailsService {
                         .expiryDate(LocalDateTime.now().plusMinutes(30))
                         .build());
 
-        // 이메일 발송
-        emailService.sendPasswordResetEmail(user.getEmail(), user.getNickname(), token);
+        // 이메일 발송 (subEmail 우선, 없으면 기본 email)
+        String sendTo = (user.getSubEmail() != null && !user.getSubEmail().isBlank())
+                ? user.getSubEmail() : user.getEmail();
+        emailService.sendPasswordResetEmail(sendTo, user.getNickname(), token);
     }
 
     // ─────────────────────────────────────────
