@@ -1,6 +1,7 @@
 import { useEffect } from 'react' // 👈 useEffect 추가
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom' // 👈 hooks 추가
 import { useAuthStore } from './stores/useAuthStore' // 👈 스토어 임포트
+import { useTokenRefresh } from './hooks/useTokenRefresh'
 
 // 페이지 컴포넌트들
 import Canvas from './pages/Canvas'
@@ -41,6 +42,7 @@ function OnboardingGuard() {
 }
 
 function App() {
+    useTokenRefresh()
     return (
         <>
             <OnboardingGuard />

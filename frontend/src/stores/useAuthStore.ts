@@ -60,6 +60,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: () => {
     // 로컬 스토리지 삭제
     localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
     localStorage.removeItem('userId')
     localStorage.removeItem('nickname')
     localStorage.removeItem('role')

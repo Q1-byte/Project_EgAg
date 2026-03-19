@@ -40,36 +40,14 @@ export default function Login() {
 
     try {
       // 1. 변수 선언은 한 번만! 'unknown'을 거쳐 'Record<string, unknown>'으로 안전하게 변환
-      const res = (await login(email, password) as unknown) as Record<string, unknown>;
+      const res = await login(email, password)
 
-      // 🔍 [데이터 확인용] 알림창으로 서버가 주는 진짜 키(Key) 이름을 확인하세요.
-      alert("서버 응답 데이터: " + JSON.stringify(res));
-      console.log("서버 응답 원본:", res);
+      if (res.refreshToken) localStorage.setItem('refreshToken', res.refreshToken)
+      setAuth(res.userId, res.nickname, res.role, res.tokenBalance, res.accessToken)
 
-      // 리프레시 토큰 처리
-      const refreshToken = res.refreshToken as string | undefined;
-      if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
-
-      // 데이터 추출 (res 내부에 user 객체가 있거나 res 자체가 데이터인 경우 모두 대응)
-      const userData = (res.user || res) as Record<string, unknown>;
-
-      const userId = String(userData.userId || userData.id || '');
-      const nickname = String(userData.nickname || '');
-
-      // 💡 여기서 'role'이 안 잡힌다면 alert 창에서 본 이름을 userData.role || userData.이름 으로 넣어주세요.
-      const role = String(userData.role || '');
-      const tokenBalance = Number(userData.tokenBalance ?? 0);
-      const accessToken = String(res.accessToken || userData.accessToken || '');
-
-      // Zustand 스토어에 저장
-      setAuth(userId, nickname, role, tokenBalance, accessToken);
-
-      // --- 🛡️ 이동 로직 ---
-      if (role === '100' || role === 'ADMIN') {
-        console.log("✅ 관리자 확인: 대시보드로 이동");
+      if (res.role === 'ADMIN') {
         navigate('/admin/dashboard');
       } else {
-        console.log("✅ 일반 유저 확인: 홈으로 이동");
         navigate('/');
       }
 
