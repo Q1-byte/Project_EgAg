@@ -31,7 +31,15 @@ export const completePortonePayment = (data: {
 export const requestBankTransfer = (data: {
   packageId: string
   depositorName: string
+  bankType: string
 }) => client.post<PaymentResponse>('/payments/bank-transfer', data).then(res => res.data)
 
 export const kakaoPayReady = (packageId: string) =>
   client.post<{ redirectUrl: string }>('/payments/kakaopay/ready', { packageId }).then(res => res.data)
+
+export const tossPayConfirm = (data: {
+  paymentKey: string
+  orderId: string
+  amount: number
+  packageId: string
+}) => client.post<PaymentResponse>('/payments/toss/confirm', data).then(res => res.data)

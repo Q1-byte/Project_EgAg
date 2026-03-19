@@ -9,6 +9,8 @@ import PasswordReset from './pages/PasswordReset'
 import PasswordResetConfirm from './pages/PasswordResetConfirm'
 import OAuthCallback from './pages/OAuthCallback'
 import Policy from './pages/Policy'
+import TokenShop from './pages/TokenShop'
+import MyPage from './pages/MyPage'
 
 function App() {
   return (
@@ -39,6 +41,8 @@ function App() {
       <Route path="/payment/fail" element={<div>Payment Fail</div>} />
         <Route path="/terms" element={<Policy type="TERMS" />} />
         <Route path="/privacy" element={<Policy type="PRIVACY" />} />
+      <Route path="/token-shop" element={<TokenShop />} />
+      <Route path="/mypage" element={<MyPage />} />
       <Route path="/admin" element={<div>Admin</div>} />
       <Route path="*" element={<div>404 Not Found</div>} />
     </Routes>

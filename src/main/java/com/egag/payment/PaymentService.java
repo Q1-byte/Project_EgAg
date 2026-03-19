@@ -11,8 +11,10 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.Base64;
 
 @Slf4j
 @Service
@@ -22,6 +24,9 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final TokenLogRepository tokenLogRepository;
     private final UserRepository userRepository;
+
+    @Value("${tosspay.secret-key:}")
+    private String tossSecretKey;
 
     @Value("${portone.api-key:}")
     private String portoneApiKey;
@@ -38,9 +43,13 @@ public class PaymentService {
     @Value("${app.base-url:http://localhost:5173}")
     private String appBaseUrl;
 
-    private static final String BANK_NAME = "카카오뱅크";
-    private static final String BANK_ACCOUNT = "3333-01-1234567";
     private static final String ACCOUNT_HOLDER = "데칼코";
+    private static final Map<String, String[]> BANK_ACCOUNTS = Map.of(
+        "kakao",  new String[]{"카카오뱅크",  "3333-01-1234567"},
+        "toss",   new String[]{"토스뱅크",    "1000-1234-5678"},
+        "kb",     new String[]{"국민은행",    "123456-78-901234"},
+        "shinhan",new String[]{"신한은행",    "110-123-456789"}
+    );
 
     public List<PackageDto> getPackages() {
         return List.of(
@@ -97,14 +106,19 @@ public class PaymentService {
     @Transactional
     public PaymentResponse requestBankTransfer(String email, BankTransferRequest req) {
         PackageInfo pkg = PackageInfo.fromId(req.getPackageId());
-        userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(email)
             .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
+        String bankType = req.getBankType() != null ? req.getBankType() : "kakao";
+        String[] bankInfo = BANK_ACCOUNTS.getOrDefault(bankType, BANK_ACCOUNTS.get("kakao"));
+
         String merchantUid = "egag_" + pkg.getId().toLowerCase() + "_" + System.currentTimeMillis();
+        String impUid = "bank_" + UUID.randomUUID().toString().replace("-", "");
 
         Payment payment = Payment.builder()
             .id(UUID.randomUUID().toString())
-            .user(userRepository.findByEmail(email).get())
+            .user(user)
+            .impUid(impUid)
             .merchantUid(merchantUid)
             .packageName(pkg.getDisplayName())
             .tokenAmount(pkg.getTokenAmount())
@@ -118,8 +132,8 @@ public class PaymentService {
             .success(true)
             .message("아래 계좌로 " + pkg.getPrice() + "원을 입금해주세요. 확인 후 토큰이 지급됩니다.")
             .merchantUid(merchantUid)
-            .bankName(BANK_NAME)
-            .bankAccount(BANK_ACCOUNT)
+            .bankName(bankInfo[0])
+            .bankAccount(bankInfo[1])
             .accountHolder(ACCOUNT_HOLDER)
             .build();
     }
@@ -232,6 +246,75 @@ public class PaymentService {
             .build());
 
         return appBaseUrl + "/token-shop?status=success&tokens=" + payment.getTokenAmount() + "&balance=" + newBalance;
+    }
+
+    @Transactional
+    public PaymentResponse tossPayConfirm(String email, TossPaymentConfirmRequest req) {
+        PackageInfo pkg = PackageInfo.fromId(req.getPackageId());
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        if (req.getAmount() != pkg.getPrice()) {
+            throw new RuntimeException("결제 금액이 패키지 가격과 일치하지 않습니다.");
+        }
+
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        String credentials = tossSecretKey + ":";
+        String encoded = Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
+        headers.set("Authorization", "Basic " + encoded);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("paymentKey", req.getPaymentKey());
+        body.put("orderId", req.getOrderId());
+        body.put("amount", req.getAmount());
+
+        try {
+            restTemplate.exchange(
+                "https://api.tosspayments.com/v1/payments/confirm",
+                HttpMethod.POST,
+                new HttpEntity<>(body, headers),
+                Map.class
+            );
+        } catch (HttpClientErrorException e) {
+            throw new RuntimeException("토스페이 결제 확인 실패: " + e.getResponseBodyAsString());
+        }
+
+        Payment payment = Payment.builder()
+            .id(UUID.randomUUID().toString())
+            .user(user)
+            .impUid(req.getPaymentKey())
+            .merchantUid(req.getOrderId())
+            .packageName(pkg.getDisplayName())
+            .tokenAmount(pkg.getTokenAmount())
+            .amount(pkg.getPrice())
+            .payMethod("tosspay")
+            .status("paid")
+            .paidAt(LocalDateTime.now())
+            .build();
+        paymentRepository.save(payment);
+
+        int newBalance = user.getTokenBalance() + pkg.getTokenAmount();
+        user.setTokenBalance(newBalance);
+        userRepository.save(user);
+
+        tokenLogRepository.save(TokenLog.builder()
+            .id(UUID.randomUUID().toString())
+            .user(user)
+            .amount(pkg.getTokenAmount())
+            .balanceAfter(newBalance)
+            .type("purchase")
+            .reason(pkg.getDisplayName() + " 패키지 구매 (토스페이)")
+            .referenceId(payment.getId())
+            .build());
+
+        return PaymentResponse.builder()
+            .success(true)
+            .message("결제 완료! 토큰 " + pkg.getTokenAmount() + "개가 충전되었습니다.")
+            .newTokenBalance(newBalance)
+            .merchantUid(req.getOrderId())
+            .build();
     }
 
     @SuppressWarnings("unchecked")

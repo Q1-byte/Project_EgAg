@@ -8,4 +8,5 @@ import lombok.Setter;
 public class BankTransferRequest {
     private String packageId;
     private String depositorName;
+    private String bankType; // kakao, toss, kb, shinhan
 }

@@ -48,6 +48,14 @@ public class PaymentController {
         return ResponseEntity.ok(result);
     }
 
+    @PostMapping("/toss/confirm")
+    public ResponseEntity<PaymentResponse> tossPayConfirm(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody TossPaymentConfirmRequest request) {
+        return ResponseEntity.ok(
+            paymentService.tossPayConfirm(userDetails.getUsername(), request));
+    }
+
     @GetMapping("/kakaopay/approve")
     public ResponseEntity<Void> kakaoPayApprove(
             @RequestParam("pg_token") String pgToken,

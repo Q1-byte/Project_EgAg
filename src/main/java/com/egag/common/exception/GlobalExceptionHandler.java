@@ -28,6 +28,13 @@ public class GlobalExceptionHandler {
                 .body(Map.of("error", Map.of("code", code, "message", e.getMessage())));
     }
 
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException e) {
+        log.error("❌ 서버 오류: {}", e.getMessage(), e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", Map.of("code", "INTERNAL_ERROR", "message", e.getMessage() != null ? e.getMessage() : "서버 오류가 발생했습니다")));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleException(Exception e) {
         log.error("❌ 서버 오류: {}", e.getMessage(), e);

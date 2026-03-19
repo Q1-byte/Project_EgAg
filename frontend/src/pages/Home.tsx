@@ -138,7 +138,8 @@ export default function Home() {
           {isAuthenticated && nickname ? (
             <>
               <span style={s.userGreet}>{nickname}님 안녕하세요!</span>
-              <span style={s.tokenBadge}><Ticket size={13} style={{ marginRight: 4, verticalAlign: 'middle' }} />{tokenBalance}개</span>
+              <span style={{ ...s.tokenBadge, cursor: 'pointer' }} onClick={() => navigate('/token-shop')}><Ticket size={13} style={{ marginRight: 4, verticalAlign: 'middle' }} />{tokenBalance}개</span>
+              <button style={s.logoutBtn} onClick={() => navigate('/mypage')}>마이페이지</button>
               <button style={s.logoutBtn} onClick={handleLogout}>로그아웃</button>
             </>
           ) : (

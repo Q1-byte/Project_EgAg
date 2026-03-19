@@ -90,6 +90,10 @@ kakaopay:
   secret-key: ${KAKAOPAY_SECRET_KEY:}
   cid: ${KAKAOPAY_CID:TC0ONETIME}
 
+# TossPay (결제)
+tosspay:
+  secret-key: ${TOSS_SECRET_KEY:}
+
 # Portone (결제)
 portone:
   api-key: ${PORTONE_API_KEY:}

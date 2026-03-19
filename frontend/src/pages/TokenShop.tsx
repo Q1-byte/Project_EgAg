@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { loadTossPayments } from '@tosspayments/tosspayments-sdk'
 import { useAuthStore } from '../stores/useAuthStore'
-import { getPackages, completePortonePayment, requestBankTransfer, kakaoPayReady } from '../api/payment'
+import { getPackages, requestBankTransfer, kakaoPayReady, tossPayConfirm } from '../api/payment'
 import type { Package } from '../api/payment'
 
 declare global {
   interface Window { IMP: any }
 }
 
-const PORTONE_CODE = (import.meta as any).env?.VITE_PORTONE_CODE || 'imp00000000'
+const TOSS_CLIENT_KEY = (import.meta as any).env?.VITE_TOSS_CLIENT_KEY || ''
 
-type PayMethod = 'kakaopay' | 'card' | 'bank'
+type PayMethod = 'kakaopay' | 'tosspay' | 'card' | 'bank'
 
 interface BankInfo {
   bankName: string
@@ -29,6 +30,7 @@ export default function TokenShop() {
   const [selectedPkg, setSelectedPkg] = useState<Package | null>(null)
   const [payMethod, setPayMethod] = useState<PayMethod>('kakaopay')
   const [depositorName, setDepositorName] = useState('')
+  const [selectedBank, setSelectedBank] = useState('kakao')
   const [loading, setLoading] = useState(false)
   const [bankInfo, setBankInfo] = useState<BankInfo | null>(null)
   const [error, setError] = useState('')
@@ -36,7 +38,6 @@ export default function TokenShop() {
 
   useEffect(() => {
     getPackages().then(setPackages)
-    if (window.IMP) window.IMP.init(PORTONE_CODE)
 
     // 카카오페이 결제 후 리다이렉트 처리
     const status = searchParams.get('status')
@@ -45,6 +46,25 @@ export default function TokenShop() {
       const balance = searchParams.get('balance')
       if (tokens) setSuccessMsg(`토큰 ${tokens}개가 충전되었습니다!`)
       if (balance) setTokenBalance(Number(balance))
+    } else if (status === 'toss_success') {
+      const paymentKey = searchParams.get('paymentKey')
+      const orderId = searchParams.get('orderId')
+      const amount = searchParams.get('amount')
+      const packageId = sessionStorage.getItem('toss_package_id')
+      sessionStorage.removeItem('toss_package_id')
+      if (paymentKey && orderId && amount && packageId) {
+        tossPayConfirm({ paymentKey, orderId, amount: Number(amount), packageId })
+          .then(res => {
+            if (res.newTokenBalance !== undefined) setTokenBalance(res.newTokenBalance)
+            setSuccessMsg(`토큰이 충전되었습니다!`)
+          })
+          .catch((err: any) => {
+            const msg = err?.response?.data?.error?.message || '토스 결제 확인 중 오류가 발생했습니다.'
+            setError(String(msg))
+          })
+      } else {
+        setError('결제 정보가 올바르지 않습니다. 다시 시도해주세요.')
+      }
     } else if (status === 'cancel') {
       setError('결제가 취소되었습니다.')
     } else if (status === 'fail') {
@@ -70,6 +90,35 @@ export default function TokenShop() {
       return
     }
 
+    if (payMethod === 'tosspay') {
+      if (!TOSS_CLIENT_KEY) {
+        setError('토스페이 클라이언트 키가 설정되지 않았습니다. (VITE_TOSS_CLIENT_KEY)')
+        setLoading(false)
+        return
+      }
+      try {
+        sessionStorage.setItem('toss_package_id', selectedPkg.id)
+        const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY)
+        const customerKey = (nickname || 'user').replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 50)
+        const payment = tossPayments.payment({ customerKey })
+        const merchantUid = `egag_${selectedPkg.id.toLowerCase()}_${Date.now()}`
+        await payment.requestPayment({
+          method: 'CARD',
+          amount: { currency: 'KRW', value: selectedPkg.price },
+          orderId: merchantUid,
+          orderName: `${selectedPkg.displayName} (토큰 ${selectedPkg.tokenAmount}개)`,
+          successUrl: `${window.location.origin}/token-shop?status=toss_success`,
+          failUrl: `${window.location.origin}/token-shop?status=fail`,
+          card: { flowMode: 'DIRECT', easyPay: 'TOSSPAY' },
+        })
+      } catch (err: any) {
+        sessionStorage.removeItem('toss_package_id')
+        setError(err?.message || '토스페이 결제 중 오류가 발생했습니다.')
+        setLoading(false)
+      }
+      return
+    }
+
     if (payMethod === 'bank') {
       if (!depositorName.trim()) {
         setError('입금자명을 입력해주세요.')
@@ -77,7 +126,7 @@ export default function TokenShop() {
         return
       }
       try {
-        const res = await requestBankTransfer({ packageId: selectedPkg.id, depositorName })
+        const res = await requestBankTransfer({ packageId: selectedPkg.id, depositorName, bankType: selectedBank })
         setBankInfo({
           bankName: res.bankName!,
           bankAccount: res.bankAccount!,
@@ -85,39 +134,39 @@ export default function TokenShop() {
           amount: selectedPkg.price,
           packageName: selectedPkg.displayName,
         })
-      } catch {
-        setError('오류가 발생했습니다. 다시 시도해주세요.')
+      } catch (err: any) {
+        const msg = err?.response?.data?.error?.message || err?.response?.data?.message || '오류가 발생했습니다. 다시 시도해주세요.'
+        setError(String(msg))
       }
       setLoading(false)
       return
     }
 
-    const merchantUid = `egag_${selectedPkg.id.toLowerCase()}_${Date.now()}`
-    window.IMP.request_pay({
-      pg: payMethod === 'kakaopay' ? 'kakaopay' : 'html5_inicis',
-      pay_method: 'card',
-      merchant_uid: merchantUid,
-      name: `${selectedPkg.displayName} (토큰 ${selectedPkg.tokenAmount}개)`,
-      amount: selectedPkg.price,
-      buyer_name: nickname || '',
-    }, async (rsp: any) => {
-      if (rsp.success) {
-        try {
-          const res = await completePortonePayment({
-            impUid: rsp.imp_uid,
-            merchantUid: rsp.merchant_uid,
-            packageId: selectedPkg.id,
-          })
-          if (res.newTokenBalance !== undefined) setTokenBalance(res.newTokenBalance)
-          setSuccessMsg(`토큰 ${selectedPkg.tokenAmount}개가 충전되었습니다!`)
-        } catch {
-          setError('결제 검증 중 오류가 발생했습니다.')
-        }
-      } else {
-        setError(`결제 실패: ${rsp.error_msg}`)
-      }
+    // 카드결제 → Toss SDK로 처리
+    if (!TOSS_CLIENT_KEY) {
+      setError('토스페이먼츠 클라이언트 키가 설정되지 않았습니다.')
       setLoading(false)
-    })
+      return
+    }
+    try {
+      sessionStorage.setItem('toss_package_id', selectedPkg.id)
+      const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY)
+      const customerKey = (nickname || 'user').replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 50)
+      const payment = tossPayments.payment({ customerKey })
+      const merchantUid = `egag_${selectedPkg.id.toLowerCase()}_${Date.now()}`
+      await payment.requestPayment({
+        method: 'CARD',
+        amount: { currency: 'KRW', value: selectedPkg.price },
+        orderId: merchantUid,
+        orderName: `${selectedPkg.displayName} (토큰 ${selectedPkg.tokenAmount}개)`,
+        successUrl: `${window.location.origin}/token-shop?status=toss_success`,
+        failUrl: `${window.location.origin}/token-shop?status=fail`,
+      })
+    } catch (err: any) {
+      sessionStorage.removeItem('toss_package_id')
+      setError(err?.message || '카드 결제 중 오류가 발생했습니다.')
+      setLoading(false)
+    }
   }
 
   if (successMsg) {
@@ -159,12 +208,18 @@ export default function TokenShop() {
       {/* 헤더 */}
       <header style={s.header}>
         <div style={s.logo} onClick={() => navigate('/')} role="button">
-          <span style={{ fontSize: 22 }}>🪞</span>
-          <span style={s.logoText}>Decal<b>co</b></span>
+          <img src="/Egag_logo-removebg.png" alt="EgAg" style={{ height: 110 }} />
         </div>
-        {isAuthenticated && (
-          <span style={s.tokenBadge}>🎟 {tokenBalance}개 보유 중</span>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {isAuthenticated && nickname && (
+            <>
+              <span style={s.userGreet}>{nickname}님 안녕하세요!</span>
+              <span style={s.tokenBadge}>🎟 {tokenBalance}개 보유 중</span>
+            </>
+          )}
+          <button style={s.navBtn} onClick={() => navigate('/mypage')}>마이페이지</button>
+          <button style={s.navBtn} onClick={() => navigate(-1)}>← 돌아가기</button>
+        </div>
       </header>
 
       <main style={s.main}>
@@ -183,8 +238,9 @@ export default function TokenShop() {
               }}
               onClick={() => { setSelectedPkg(pkg); setError('') }}
             >
+              {pkg.id === 'BASIC' && <div style={{ ...s.badge, background: '#A78BFA' }}>✨ 입문</div>}
               {pkg.popular && <div style={s.badge}>🔥 인기</div>}
-              {pkg.bestValue && <div style={{ ...s.badge, background: '#7C3AED' }}>🏆 최고 혜택</div>}
+              {pkg.bestValue && <div style={{ ...s.badge, background: '#A78BFA' }}>🏆 최고 혜택</div>}
               <div style={s.pkgIcon}>
                 {pkg.id === 'BASIC' ? '🎨' : pkg.id === 'STANDARD' ? '🖌️' : '🏆'}
               </div>
@@ -202,6 +258,7 @@ export default function TokenShop() {
           <div style={s.methodRow}>
             {([
               { key: 'kakaopay', label: '카카오페이', emoji: '💛' },
+              { key: 'tosspay',  label: '토스페이',   emoji: '🔵' },
               { key: 'card',     label: '카드결제',   emoji: '💳' },
               { key: 'bank',     label: '무통장입금', emoji: '🏦' },
             ] as { key: PayMethod; label: string; emoji: string }[]).map(m => (
@@ -218,7 +275,30 @@ export default function TokenShop() {
 
           {payMethod === 'bank' && (
             <div style={s.depositorWrap}>
-              <label style={s.depositorLabel}>입금자명</label>
+              <label style={{ ...s.depositorLabel, display: 'block', textAlign: 'center', marginBottom: 10 }}>입금 은행 선택</label>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+                {([
+                  { key: 'kakao',   label: '카카오뱅크' },
+                  { key: 'toss',    label: '토스뱅크'   },
+                  { key: 'kb',      label: '국민은행'   },
+                  { key: 'shinhan', label: '신한은행'   },
+                ]).map(b => (
+                  <button
+                    key={b.key}
+                    onClick={() => setSelectedBank(b.key)}
+                    style={{
+                      flex: 1, padding: '10px 0', borderRadius: 12, fontSize: 13, fontWeight: 700,
+                      cursor: 'pointer',
+                      border: selectedBank === b.key ? '2px solid #6B82A0' : '1.5px solid rgba(107,130,160,0.2)',
+                      background: selectedBank === b.key
+                        ? 'linear-gradient(135deg, rgba(107,130,160,0.15) 0%, rgba(196,122,138,0.12) 100%)'
+                        : 'rgba(255,255,255,0.7)',
+                      color: selectedBank === b.key ? '#3a5a8a' : '#6B82A0',
+                    }}
+                  >{b.label}</button>
+                ))}
+              </div>
+              <label style={{ ...s.depositorLabel, textAlign: 'center', marginTop: 32 }}>입금자명</label>
               <input
                 style={s.depositorInput}
                 placeholder="입금 시 사용할 이름을 입력하세요"
@@ -250,110 +330,143 @@ export default function TokenShop() {
 const s: Record<string, React.CSSProperties> = {
   bg: {
     minHeight: '100vh',
-    background: 'linear-gradient(160deg, #EFF6FF 0%, #F0FDF4 60%, #FFF7ED 100%)',
+    background: 'linear-gradient(160deg, #f5f0f8 0%, #ede8f2 40%, #f0eee9 100%)',
     display: 'flex', flexDirection: 'column',
   },
   header: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '16px 40px', borderBottom: '1px solid #E2E8F0',
-    background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)',
-    position: 'sticky', top: 0, zIndex: 10,
+    padding: '0 28px', height: 70, overflow: 'hidden',
+    background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(16px)',
+    position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)',
+    width: 'calc(100% - 48px)', maxWidth: 960,
+    borderRadius: 100,
+    boxShadow: '0 4px 32px rgba(0,0,0,0.08)',
+    border: '1px solid rgba(255,255,255,0.8)',
+    zIndex: 100,
   },
-  logo: { display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' },
-  logoText: { fontSize: 20, fontWeight: 700, color: '#1D4ED8' },
+  logo: { display: 'flex', alignItems: 'center', cursor: 'pointer' },
+  logoText: { fontSize: 20, fontWeight: 700, color: '#3a5a8a' },
+  userGreet: { fontSize: 14, fontWeight: 600, color: '#4a4a6a' },
   tokenBadge: {
-    fontSize: 14, fontWeight: 700, color: '#1D4ED8',
-    background: '#EFF6FF', border: '1px solid #BFDBFE',
+    fontSize: 13, fontWeight: 700, color: '#6B82A0',
+    background: 'rgba(107,130,160,0.12)', border: '1px solid rgba(107,130,160,0.25)',
     borderRadius: 20, padding: '4px 14px',
+  },
+  navBtn: {
+    fontSize: 13, fontWeight: 500, color: '#8a8aaa',
+    background: 'none', border: '1px solid #ddd',
+    borderRadius: 20, padding: '6px 16px', cursor: 'pointer',
   },
   main: {
     flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-    padding: '80px 24px 64px',
+    padding: '130px 24px 80px',
   },
-  title: { fontSize: 34, fontWeight: 800, color: '#0F172A', margin: '48px 0 8px', letterSpacing: 2 },
-  subtitle: { fontSize: 16, color: '#64748B', margin: '0 0 24px' },
+  title: {
+    fontSize: 34, fontWeight: 800, margin: '48px 0 16px', letterSpacing: 2,
+    padding: '4px 8px',
+    background: 'linear-gradient(135deg, #3a5a8a 0%, #c47a8a 100%)',
+    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+  },
+  subtitle: { fontSize: 16, color: '#8a7a9a', margin: '0 0 48px' },
   packages: { display: 'flex', gap: 20, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 56, marginTop: 56 },
   pkgCard: {
-    background: '#fff', borderRadius: 20, padding: '32px 24px',
-    boxShadow: '0 2px 16px rgba(0,0,0,0.07)', width: 200,
+    background: 'linear-gradient(135deg, rgba(255,255,255,0.85) 0%, rgba(245,240,248,0.7) 100%)',
+    borderRadius: 28, padding: '32px 24px',
+    boxShadow: '0 4px 24px rgba(107,130,160,0.10)', width: 200,
     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-    cursor: 'pointer', border: '2px solid #F1F5F9',
+    cursor: 'pointer', border: '1.5px solid rgba(255,255,255,0.7)',
     transition: 'transform 0.15s, box-shadow 0.15s',
     position: 'relative',
   },
   pkgCardSelected: {
-    border: '2px solid #3B82F6',
-    boxShadow: '0 4px 24px rgba(59,130,246,0.2)',
+    border: '2px solid #6B82A0',
+    boxShadow: '0 8px 32px rgba(107,130,160,0.22)',
     transform: 'translateY(-4px)',
   },
-  pkgCardPopular: { border: '2px solid #F59E0B' },
+  pkgCardPopular: {},
   badge: {
-    position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
-    background: '#F59E0B', color: '#fff', fontSize: 12, fontWeight: 700,
-    borderRadius: 20, padding: '3px 12px', whiteSpace: 'nowrap',
+    position: 'absolute', top: -22, left: '50%', transform: 'translate(-50%, -100%)',
+    background: '#7C3AED', color: '#fff', fontSize: 12, fontWeight: 700,
+    borderRadius: 20, padding: '4px 0', whiteSpace: 'nowrap',
+    width: 86, textAlign: 'center',
   },
   pkgIcon: { fontSize: 28, marginBottom: 4 },
-  pkgName: { fontSize: 20, fontWeight: 800, color: '#0F172A', margin: 0 },
-  pkgTokens: { fontSize: 16, fontWeight: 700, color: '#2563EB' },
-  pkgPrice: { fontSize: 22, fontWeight: 800, color: '#0F172A' },
-  pkgPer: { fontSize: 12, color: '#94A3B8' },
-  section: { width: '100%', maxWidth: 620, marginBottom: 28 },
-  sectionTitle: { fontSize: 18, fontWeight: 700, color: '#0F172A', marginBottom: 16 },
+  pkgName: { fontSize: 20, fontWeight: 800, color: '#4a4a6a', margin: 0 },
+  pkgTokens: { fontSize: 16, fontWeight: 700, color: '#4a4a6a' },
+  pkgPrice: { fontSize: 22, fontWeight: 800, color: '#4a4a6a' },
+  pkgPer: { fontSize: 12, color: '#9CA3AF' },
+  section: { width: '100%', maxWidth: 620, marginBottom: 56 },
+  sectionTitle: { fontSize: 18, fontWeight: 700, color: '#3a5a8a', marginBottom: 16, textAlign: 'center' },
   methodRow: { display: 'flex', gap: 12 },
   methodBtn: {
     flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-    padding: '16px 12px', border: '2px solid #E2E8F0', borderRadius: 14,
-    background: '#fff', cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#475569',
+    padding: '16px 12px', border: '1.5px solid rgba(107,130,160,0.2)', borderRadius: 18,
+    background: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#6B82A0',
     transition: 'all 0.15s',
   },
   methodBtnActive: {
-    border: '2px solid #3B82F6', background: '#EFF6FF', color: '#1D4ED8',
+    border: '2px solid #6B82A0',
+    background: 'linear-gradient(135deg, rgba(107,130,160,0.12) 0%, rgba(196,122,138,0.10) 100%)',
+    color: '#3a5a8a',
   },
-  depositorWrap: { marginTop: 16 },
-  depositorLabel: { display: 'block', fontSize: 14, fontWeight: 600, color: '#374151', marginBottom: 6 },
+  depositorWrap: { marginTop: 32 },
+  depositorLabel: { display: 'block', fontSize: 14, fontWeight: 600, color: '#6B82A0', marginBottom: 6 },
   depositorInput: {
     width: '100%', padding: '12px 14px', fontSize: 15,
-    border: '2px solid #E2E8F0', borderRadius: 10, outline: 'none',
+    border: '1.5px solid rgba(107,130,160,0.25)', borderRadius: 12, outline: 'none',
+    background: 'rgba(255,255,255,0.8)',
     boxSizing: 'border-box',
   },
   errorBox: {
-    width: '100%', maxWidth: 620, background: '#FEF2F2', border: '1px solid #FECACA',
-    borderRadius: 10, padding: '12px 16px', fontSize: 14, color: '#DC2626', marginBottom: 16,
+    width: '100%', maxWidth: 620, background: 'rgba(254,242,242,0.9)', border: '1px solid #FECACA',
+    borderRadius: 12, padding: '8px 12px', fontSize: 13, color: '#DC2626', marginBottom: 26,
+    boxSizing: 'border-box', marginTop: -28,
   },
   payBtn: {
     width: '100%', maxWidth: 620, padding: '16px', fontSize: 17, fontWeight: 800,
-    color: '#fff', border: 'none', borderRadius: 14, cursor: 'pointer',
-    background: 'linear-gradient(135deg, #3B82F6, #6366F1)',
+    color: '#fff', border: 'none', borderRadius: 16, cursor: 'pointer',
+    background: 'linear-gradient(135deg, #6B82A0, #c47a8a)',
+    boxShadow: '0 4px 20px rgba(107,130,160,0.25)',
     marginBottom: 12,
   },
   backBtn: {
-    background: 'none', border: 'none', color: '#64748B',
+    background: 'none', border: 'none', color: '#8a8aaa',
     fontSize: 15, cursor: 'pointer', fontWeight: 600,
   },
   successBox: {
     margin: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center',
-    gap: 16, background: '#fff', borderRadius: 24, padding: '56px 48px',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.1)', textAlign: 'center',
+    gap: 16,
+    background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(245,240,248,0.8) 100%)',
+    borderRadius: 28, padding: '56px 48px',
+    boxShadow: '0 8px 40px rgba(107,130,160,0.15)',
+    border: '1.5px solid rgba(255,255,255,0.7)',
+    textAlign: 'center',
   },
-  successTitle: { fontSize: 28, fontWeight: 800, color: '#0F172A', margin: 0 },
-  successDesc: { fontSize: 16, color: '#475569', margin: 0 },
-  successBalance: { fontSize: 18, fontWeight: 700, color: '#2563EB', margin: 0 },
+  successTitle: { fontSize: 28, fontWeight: 800, color: '#3a5a8a', margin: 0 },
+  successDesc: { fontSize: 16, color: '#8a7a9a', margin: 0 },
+  successBalance: { fontSize: 18, fontWeight: 700, color: '#6B82A0', margin: 0 },
   bankBox: {
     margin: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center',
-    gap: 16, background: '#fff', borderRadius: 24, padding: '48px 40px',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.1)', maxWidth: 440, width: '100%',
+    gap: 16,
+    background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(245,240,248,0.8) 100%)',
+    borderRadius: 28, padding: '48px 40px',
+    boxShadow: '0 8px 40px rgba(107,130,160,0.15)',
+    border: '1.5px solid rgba(255,255,255,0.7)',
+    maxWidth: 440, width: '100%',
   },
   bankCard: {
-    width: '100%', background: '#F8FAFC', borderRadius: 14,
+    width: '100%', background: 'rgba(245,240,248,0.6)', borderRadius: 16,
     padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 12,
+    border: '1px solid rgba(107,130,160,0.12)',
   },
   bankRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  bankLabel: { fontSize: 14, color: '#64748B', fontWeight: 600 },
-  bankValue: { fontSize: 15, color: '#0F172A', fontWeight: 700 },
-  bankNote: { fontSize: 13, color: '#94A3B8', textAlign: 'center', margin: 0 },
+  bankLabel: { fontSize: 14, color: '#8a7a9a', fontWeight: 600 },
+  bankValue: { fontSize: 15, color: '#3a5a8a', fontWeight: 700 },
+  bankNote: { fontSize: 13, color: '#a09ab0', textAlign: 'center', margin: 0 },
   primaryBtn: {
     padding: '14px 32px', fontSize: 16, fontWeight: 700, color: '#fff',
-    background: 'linear-gradient(135deg, #3B82F6, #6366F1)',
-    border: 'none', borderRadius: 12, cursor: 'pointer',
+    background: 'linear-gradient(135deg, #6B82A0, #c47a8a)',
+    border: 'none', borderRadius: 14, cursor: 'pointer',
+    boxShadow: '0 4px 20px rgba(107,130,160,0.25)',
   },
 }
