@@ -45,7 +45,7 @@ export default function MyPage() {
         setProfile(p)
         setEditNickname(p.nickname || '')
         setEditPhone(p.phone || '')
-        setEditEmail(p.email || '')
+        setEditEmail(p.subEmail || '')
       })
       .catch(() => setProfileError(true))
       .finally(() => setLoadingProfile(false))
@@ -174,7 +174,7 @@ export default function MyPage() {
                   {[
                     { label: '이름', value: profile.name || '—' },
                     { label: '닉네임', value: profile.nickname },
-                    { label: '이메일', value: profile.email },
+                    { label: '이메일', value: profile.subEmail || '—' },
                     { label: '전화번호', value: profile.phone || '—' },
                     { label: '가입 방법', value: profile.provider === 'email' ? '이메일' : `소셜 (${profile.provider})` },
                     { label: '가입일', value: new Date(profile.createdAt).toLocaleDateString('ko-KR') },

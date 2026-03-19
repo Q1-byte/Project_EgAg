@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 public class UserProfileResponse {
     private final String id;
     private final String email;
+    private final String subEmail;
     private final String name;
     private final String nickname;
     private final String phone;
@@ -22,6 +23,7 @@ public class UserProfileResponse {
     public UserProfileResponse(User user) {
         this.id = user.getId();
         this.email = user.getEmail();
+        this.subEmail = user.getSubEmail();
         this.name = user.getName();
         this.nickname = user.getNickname();
         this.phone = user.getPhone();

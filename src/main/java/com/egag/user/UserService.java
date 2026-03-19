@@ -50,11 +50,11 @@ public class UserService {
             user.setPhone(req.getPhone());
         }
         if (req.getEmail() != null && !req.getEmail().isBlank()
-                && !req.getEmail().equals(user.getEmail())) {
-            if (userRepository.existsByEmail(req.getEmail())) {
+                && !req.getEmail().equals(user.getSubEmail())) {
+            if (userRepository.existsBySubEmail(req.getEmail())) {
                 throw new RuntimeException("이미 사용 중인 이메일입니다.");
             }
-            user.setEmail(req.getEmail());
+            user.setSubEmail(req.getEmail());
         }
 
         return new UserProfileResponse(userRepository.save(user));
@@ -78,13 +78,13 @@ public class UserService {
             }
             user.setNickname(req.getNickname());
         }
-        // 카카오 임시 이메일인 경우 실제 이메일로 교체
+        // 온보딩 이메일은 subEmail에 저장 (인증용 email은 변경하지 않음)
         if (req.getEmail() != null && !req.getEmail().isBlank()
-                && user.getEmail().endsWith("@kakao.local")) {
-            if (userRepository.existsByEmail(req.getEmail())) {
+                && !req.getEmail().equals(user.getSubEmail())) {
+            if (userRepository.existsBySubEmail(req.getEmail())) {
                 throw new RuntimeException("이미 사용 중인 이메일입니다.");
             }
-            user.setEmail(req.getEmail());
+            user.setSubEmail(req.getEmail());
         }
 
         return new UserProfileResponse(userRepository.save(user));

@@ -32,6 +32,9 @@ public class User {
     @Column(nullable = false, unique = true, length = 12)
     private String nickname; // 본인의 username 대신 기존의 nickname을 사용하거나 둘 다 유지
 
+    @Column(name = "sub_email")
+    private String subEmail;
+
     @Column(name = "profile_image_url", columnDefinition = "TEXT")
     private String profileImageUrl;
 
