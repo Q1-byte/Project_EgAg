@@ -10,4 +10,5 @@ public class TransformResponse {
     private String prompt;
     private String style;
     private String story;
+    private int tokenBalance;
 }
