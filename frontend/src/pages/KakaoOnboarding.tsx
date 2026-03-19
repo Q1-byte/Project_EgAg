@@ -5,21 +5,25 @@ import { useAuthStore } from '../stores/useAuthStore'
 
 export default function KakaoOnboarding() {
   const navigate = useNavigate()
-  const { nickname, setNeedsOnboarding } = useAuthStore()
+  const { nickname: kakaoNickname, setNeedsOnboarding } = useAuthStore()
 
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
+  const [nickname, setNickname] = useState('')
   const [email, setEmail] = useState('')
-  const [errors, setErrors] = useState<{ name?: string; phone?: string; email?: string }>({})
+  const [errors, setErrors] = useState<{ name?: string; phone?: string; nickname?: string; email?: string }>({})
   const [loading, setLoading] = useState(false)
   const [serverError, setServerError] = useState('')
 
   const validate = () => {
     const e: typeof errors = {}
     if (!name.trim() || name.trim().length < 2) e.name = '이름은 2자 이상 입력해주세요.'
+    if (!nickname.trim() || nickname.trim().length < 2) e.nickname = '닉네임은 2자 이상 입력해주세요.'
+    else if (nickname.trim().length > 12) e.nickname = '닉네임은 12자 이하로 입력해주세요.'
     const phoneRegex = /^010-\d{4}-\d{4}$/
     if (!phoneRegex.test(phone)) e.phone = '010-0000-0000 형식으로 입력해주세요.'
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = '올바른 이메일 형식을 입력해주세요.'
+    if (!email.trim()) e.email = '이메일을 입력해주세요.'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = '올바른 이메일 형식을 입력해주세요.'
     return e
   }
 
@@ -38,11 +42,11 @@ export default function KakaoOnboarding() {
     setLoading(true)
     setServerError('')
     try {
-      await completeOnboarding({ name: name.trim(), phone, ...(email ? { email } : {}) })
+      await completeOnboarding({ name: name.trim(), phone, nickname: nickname.trim(), ...(email ? { email } : {}) })
       setNeedsOnboarding(false)
       navigate('/', { replace: true })
     } catch (err: any) {
-      setServerError(err?.response?.data?.message || '저장 중 오류가 발생했습니다.')
+      setServerError(err?.response?.data?.error?.message || err?.response?.data?.message || '저장 중 오류가 발생했습니다.')
     } finally {
       setLoading(false)
     }
@@ -51,10 +55,9 @@ export default function KakaoOnboarding() {
   return (
     <div style={s.bg}>
       <div style={s.card}>
-        <div style={s.kakaoIcon}>🟡</div>
         <h1 style={s.title}>추가 정보 입력</h1>
         <p style={s.subtitle}>
-          <strong>{nickname}</strong>님, 카카오 계정으로 받지 못한 정보를 입력해주세요.
+          <strong>{kakaoNickname}</strong>님, 서비스 이용을 위해 정보를 입력해주세요.
         </p>
 
         <div style={s.fieldGroup}>
@@ -66,6 +69,18 @@ export default function KakaoOnboarding() {
             onChange={e => { setName(e.target.value); setErrors(p => ({ ...p, name: undefined })) }}
           />
           {errors.name && <p style={s.errorMsg}>{errors.name}</p>}
+        </div>
+
+        <div style={s.fieldGroup}>
+          <label style={s.label}>닉네임 <span style={s.required}>*</span></label>
+          <input
+            style={{ ...s.input, ...(errors.nickname ? s.inputError : {}) }}
+            placeholder="사용할 닉네임 (2~12자)"
+            value={nickname}
+            onChange={e => { setNickname(e.target.value); setErrors(p => ({ ...p, nickname: undefined })) }}
+            maxLength={12}
+          />
+          {errors.nickname && <p style={s.errorMsg}>{errors.nickname}</p>}
         </div>
 
         <div style={s.fieldGroup}>
@@ -81,10 +96,10 @@ export default function KakaoOnboarding() {
         </div>
 
         <div style={s.fieldGroup}>
-          <label style={s.label}>이메일 <span style={s.optional}>(선택)</span></label>
+          <label style={s.label}>이메일 <span style={s.required}>*</span></label>
           <input
             style={{ ...s.input, ...(errors.email ? s.inputError : {}) }}
-            placeholder="카카오에서 이메일을 받지 못한 경우 입력"
+            placeholder="이메일을 입력해주세요"
             value={email}
             onChange={e => { setEmail(e.target.value); setErrors(p => ({ ...p, email: undefined })) }}
           />
@@ -96,7 +111,6 @@ export default function KakaoOnboarding() {
         <button style={{ ...s.btn, opacity: loading ? 0.6 : 1 }} onClick={handleSubmit} disabled={loading}>
           {loading ? '저장 중...' : '완료하고 시작하기'}
         </button>
-
       </div>
     </div>
   )
@@ -117,7 +131,6 @@ const s: Record<string, React.CSSProperties> = {
     border: '1.5px solid rgba(255,255,255,0.8)',
     display: 'flex', flexDirection: 'column', alignItems: 'center',
   },
-  kakaoIcon: { fontSize: 48, marginBottom: 8 },
   title: {
     fontSize: 26, fontWeight: 800, margin: '0 0 8px',
     background: 'linear-gradient(135deg, #3a5a8a 0%, #c47a8a 100%)',
@@ -146,10 +159,5 @@ const s: Record<string, React.CSSProperties> = {
     color: '#fff', border: 'none', borderRadius: 14, cursor: 'pointer',
     background: 'linear-gradient(135deg, #6B82A0, #c47a8a)',
     boxShadow: '0 4px 20px rgba(107,130,160,0.25)',
-    marginBottom: 12,
-  },
-  skipBtn: {
-    background: 'none', border: 'none', color: '#9CA3AF',
-    fontSize: 13, cursor: 'pointer', fontWeight: 500,
   },
 }

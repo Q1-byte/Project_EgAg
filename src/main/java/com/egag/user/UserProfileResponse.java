@@ -26,9 +26,9 @@ public class UserProfileResponse {
         this.nickname = user.getNickname();
         this.phone = user.getPhone();
         this.profileImageUrl = user.getProfileImageUrl();
-        this.tokenBalance = user.getTokenBalance();
-        this.followerCount = user.getFollowerCount();
-        this.followingCount = user.getFollowingCount();
+        this.tokenBalance = user.getTokenBalance() != null ? user.getTokenBalance() : 0;
+        this.followerCount = user.getFollowerCount() != null ? user.getFollowerCount() : 0;
+        this.followingCount = user.getFollowingCount() != null ? user.getFollowingCount() : 0;
         this.provider = user.getProvider();
         this.createdAt = user.getCreatedAt();
     }

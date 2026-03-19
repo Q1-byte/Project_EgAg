@@ -28,7 +28,7 @@ export interface ArtworkSummary {
 export const getMyProfile = () =>
   client.get<UserProfile>('/users/me').then(res => res.data)
 
-export const updateMyProfile = (data: { name?: string; nickname?: string; phone?: string }) =>
+export const updateMyProfile = (data: { name?: string; nickname?: string; phone?: string; email?: string }) =>
   client.put<UserProfile>('/users/me', data).then(res => res.data)
 
 export const changePassword = (data: { currentPassword: string; newPassword: string }) =>
@@ -42,7 +42,7 @@ export const uploadProfilePhoto = (file: File) => {
   }).then(res => res.data)
 }
 
-export const completeOnboarding = (data: { name: string; phone: string; email?: string }) =>
+export const completeOnboarding = (data: { name: string; phone: string; nickname: string; email?: string }) =>
   client.post<UserProfile>('/users/me/onboarding', data).then(res => res.data)
 
 export const getMyArtworks = () =>

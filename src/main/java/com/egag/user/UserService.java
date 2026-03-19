@@ -49,6 +49,13 @@ public class UserService {
         if (req.getPhone() != null && !req.getPhone().isBlank()) {
             user.setPhone(req.getPhone());
         }
+        if (req.getEmail() != null && !req.getEmail().isBlank()
+                && !req.getEmail().equals(user.getEmail())) {
+            if (userRepository.existsByEmail(req.getEmail())) {
+                throw new RuntimeException("이미 사용 중인 이메일입니다.");
+            }
+            user.setEmail(req.getEmail());
+        }
 
         return new UserProfileResponse(userRepository.save(user));
     }
@@ -63,6 +70,13 @@ public class UserService {
         }
         if (req.getPhone() != null && !req.getPhone().isBlank()) {
             user.setPhone(req.getPhone());
+        }
+        if (req.getNickname() != null && !req.getNickname().isBlank()) {
+            if (!req.getNickname().equals(user.getNickname())
+                    && userRepository.existsByNickname(req.getNickname())) {
+                throw new RuntimeException("이미 사용 중인 닉네임입니다.");
+            }
+            user.setNickname(req.getNickname());
         }
         // 카카오 임시 이메일인 경우 실제 이메일로 교체
         if (req.getEmail() != null && !req.getEmail().isBlank()

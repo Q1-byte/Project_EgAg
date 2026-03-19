@@ -8,5 +8,6 @@ import lombok.Setter;
 public class OnboardingRequest {
     private String name;
     private String phone;
+    private String nickname;
     private String email; // 카카오 이메일 미제공 시 직접 입력
 }

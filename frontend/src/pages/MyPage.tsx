@@ -25,6 +25,7 @@ export default function MyPage() {
   // 기본 정보 변경 폼
   const [editNickname, setEditNickname] = useState('')
   const [editPhone, setEditPhone] = useState('')
+  const [editEmail, setEditEmail] = useState('')
   const [editLoading, setEditLoading] = useState(false)
   const [editMsg, setEditMsg] = useState('')
   const [editError, setEditError] = useState('')
@@ -44,6 +45,7 @@ export default function MyPage() {
         setProfile(p)
         setEditNickname(p.nickname || '')
         setEditPhone(p.phone || '')
+        setEditEmail(p.email || '')
       })
       .catch(() => setProfileError(true))
       .finally(() => setLoadingProfile(false))
@@ -73,7 +75,7 @@ export default function MyPage() {
   const handleUpdateProfile = async () => {
     setEditError(''); setEditMsg(''); setEditLoading(true)
     try {
-      const updated = await updateMyProfile({ nickname: editNickname, phone: editPhone })
+      const updated = await updateMyProfile({ nickname: editNickname, phone: editPhone, email: editEmail })
       setProfile(updated)
       setEditMsg('정보가 성공적으로 변경되었습니다!')
     } catch (err: any) {
@@ -222,6 +224,8 @@ export default function MyPage() {
                     <input style={{ ...s.input, background: 'rgba(200,195,210,0.25)', color: '#8a7a9a', cursor: 'not-allowed' }} value={profile.name || ''} readOnly />
                     <label style={s.label}>닉네임</label>
                     <input style={s.input} value={editNickname} onChange={e => setEditNickname(e.target.value)} placeholder="닉네임" />
+                    <label style={s.label}>이메일</label>
+                    <input style={s.input} type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} placeholder="이메일" />
                     <label style={s.label}>전화번호</label>
                     <input style={s.input} value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="전화번호" />
                     {editError && <div style={s.errorBox}>{editError}</div>}
@@ -392,9 +396,10 @@ const s: Record<string, React.CSSProperties> = {
   profileValue: { fontSize: 14, color: '#4a4a6a', fontWeight: 700 },
   statRow: {
     display: 'flex', alignItems: 'center',
-    background: 'rgba(245,240,248,0.6)', borderRadius: 16,
-    padding: '16px 32px', marginBottom: 24, width: '100%',
+    background: 'rgba(245,240,248,0.6)', borderRadius: 12,
+    padding: '10px 16px', marginBottom: 20, width: '100%',
     border: '1px solid rgba(107,130,160,0.1)', justifyContent: 'center',
+    boxSizing: 'border-box',
   },
   statBox: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flex: 1 },
   statNum: { fontSize: 22, fontWeight: 800, color: '#3a5a8a' },
