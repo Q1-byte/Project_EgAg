@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/useAuthStore'
 import Header from '../components/Header'
-import { getMyProfile, updateMyProfile, changePassword, getMyArtworks, uploadProfilePhoto } from '../api/user'
+import { getMyProfile, updateMyProfile, changePassword, getMyArtworks, uploadProfilePhoto, toggleArtworkVisibility, deleteArtwork } from '../api/user'
 import type { UserProfile, ArtworkSummary } from '../api/user'
 
 type Tab = 'profile' | 'gallery'
@@ -101,6 +101,45 @@ export default function MyPage() {
       setPwError(err?.response?.data?.error?.message || err?.response?.data?.message || '변경에 실패했습니다.')
     } finally {
       setPwLoading(false)
+    }
+  }
+
+  const handleToggleVisibility = async (id: string, currentIsPublic: boolean) => {
+    if (!currentIsPublic) {
+      // 비공개 → 공개: 확인 다이얼로그
+      if (!window.confirm('이 작품을 갤러리에 공개하시겠습니까?\n공개된 작품은 갤러리 페이지에서 모든 사용자에게 보여집니다.')) return
+    }
+    try {
+      const updated = await toggleArtworkVisibility(id)
+      setArtworks(prev => prev.map(a => a.id === id ? { ...a, isPublic: updated.isPublic } : a))
+    } catch { /* 실패 시 무시 */ }
+  }
+
+  const handleDeleteArtwork = async (id: string) => {
+    if (!window.confirm('이 작품을 목록에서 삭제할까요?')) return
+    try {
+      await deleteArtwork(id)
+      setArtworks(prev => prev.filter(a => a.id !== id))
+    } catch { /* 실패 시 무시 */ }
+  }
+
+  const handleDownload = async (imageUrl: string, title: string) => {
+    const a = document.createElement('a')
+    a.download = `${title || '작품'}.png`
+    if (imageUrl.startsWith('data:')) {
+      // base64 데이터 URI는 바로 연결
+      a.href = imageUrl
+      a.click()
+    } else {
+      try {
+        const res = await fetch(imageUrl)
+        const blob = await res.blob()
+        a.href = URL.createObjectURL(blob)
+        a.click()
+        URL.revokeObjectURL(a.href)
+      } catch {
+        window.open(imageUrl, '_blank')
+      }
     }
   }
 
@@ -268,18 +307,62 @@ export default function MyPage() {
             ) : (
               <div style={s.galleryGrid}>
                 {artworks.map(art => (
-                  <div key={art.id} style={s.galleryCard} onClick={() => navigate(`/canvas/${art.id}`)}>
-                    {art.imageUrl
-                      ? <img src={art.imageUrl} alt={art.title || '작품'} style={s.galleryImg} />
-                      : <div style={s.galleryImgPlaceholder}>🎨</div>
-                    }
+                  <div key={art.id} style={s.galleryCard}>
+                    {/* 두 이미지 나란히 */}
+                    <div style={s.galleryImgRow}>
+                      <div style={s.galleryImgWrap}>
+                        <p style={s.galleryImgLabel}>내 그림</p>
+                        {art.userImageData
+                          ? <img src={art.userImageData} alt="내 그림" style={s.galleryImg} />
+                          : <div style={s.galleryImgPlaceholder}>✏️</div>
+                        }
+                      </div>
+                      <div style={s.galleryImgWrap}>
+                        <p style={s.galleryImgLabel}>AI 그림</p>
+                        {art.imageUrl
+                          ? <img src={art.imageUrl} alt="AI 그림" style={s.galleryImg} />
+                          : <div style={s.galleryImgPlaceholder}>🤖</div>
+                        }
+                      </div>
+                    </div>
                     <div style={s.galleryInfo}>
-                      <p style={s.galleryTitle}>{art.title || '제목 없음'}</p>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
+                        <p style={s.galleryDate}>{new Date(art.createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace(/\.$/, '')}</p>
+                        <p style={s.galleryTitle}>{art.title || '제목 없음'}</p>
+                      </div>
                       <p style={s.galleryMeta}>
                         {art.topic && <span>#{art.topic} · </span>}
                         ❤️ {art.likeCount}
-                        {!art.isPublic && <span style={{ color: '#c47a8a' }}> · 비공개</span>}
+                        <span style={{ color: art.isPublic ? '#43aa8b' : '#c47a8a' }}>
+                          {art.isPublic ? ' · 공개' : ' · 비공개'}
+                        </span>
                       </p>
+                      <div style={s.galleryBtns}>
+                        <button
+                          style={{ ...s.galleryBtn, color: art.isPublic ? '#43aa8b' : '#8a7a9a' }}
+                          onClick={() => handleToggleVisibility(art.id, art.isPublic)}
+                          title={art.isPublic ? '비공개로 전환' : '갤러리에 공개'}
+                        >
+                          {art.isPublic ? '🌐 공개' : '🔒 비공개'}
+                        </button>
+                        <button
+                          style={s.galleryBtn}
+                          onClick={() => {
+                            if (art.userImageData) handleDownload(art.userImageData, `${art.title || '작품'}-내그림`)
+                            if (art.imageUrl) handleDownload(art.imageUrl, `${art.title || '작품'}-AI그림`)
+                          }}
+                          title="두 이미지 모두 PNG로 저장"
+                        >
+                          ⬇ 저장
+                        </button>
+                        <button
+                          style={{ ...s.galleryBtn, color: '#c47a8a' }}
+                          onClick={() => handleDeleteArtwork(art.id)}
+                          title="목록에서 삭제"
+                        >
+                          🗑 삭제
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -440,19 +523,32 @@ const s: Record<string, React.CSSProperties> = {
     display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16,
   },
   galleryCard: {
-    borderRadius: 20, overflow: 'hidden', cursor: 'pointer',
+    borderRadius: 20, overflow: 'hidden',
     background: 'rgba(255,255,255,0.85)',
     border: '1.5px solid rgba(255,255,255,0.7)',
     boxShadow: '0 4px 20px rgba(107,130,160,0.10)',
     transition: 'transform 0.15s, box-shadow 0.15s',
   },
-  galleryImg: { width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block' },
+  galleryImgRow: { display: 'flex', gap: 0 },
+  galleryImgWrap: { flex: 1, display: 'flex', flexDirection: 'column' as const },
+  galleryImgLabel: {
+    fontSize: 10, fontWeight: 700, color: '#8a7a9a', textAlign: 'center' as const,
+    margin: '6px 0 2px', letterSpacing: 0.5,
+  },
+  galleryImg: { width: '100%', aspectRatio: '1', objectFit: 'cover' as const, display: 'block' },
   galleryImgPlaceholder: {
     width: '100%', aspectRatio: '1',
-    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40,
+    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28,
     background: 'linear-gradient(135deg, rgba(107,130,160,0.1), rgba(196,122,138,0.08))',
   },
   galleryInfo: { padding: '12px 14px' },
-  galleryTitle: { fontSize: 14, fontWeight: 700, color: '#4a4a6a', margin: '0 0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
-  galleryMeta: { fontSize: 12, color: '#8a7a9a', margin: 0 },
+  galleryDate: { fontSize: 14, fontWeight: 700, color: '#4a4a6a', margin: 0, whiteSpace: 'nowrap' as const },
+  galleryTitle: { fontSize: 11, fontWeight: 500, color: '#b0a8bc', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const },
+  galleryMeta: { fontSize: 12, color: '#8a7a9a', margin: '0 0 8px' },
+  galleryBtns: { display: 'flex', gap: 6 },
+  galleryBtn: {
+    flex: 1, padding: '5px 0', fontSize: 11, fontWeight: 600, color: '#6B82A0',
+    background: 'rgba(107,130,160,0.08)', border: '1px solid rgba(107,130,160,0.15)',
+    borderRadius: 8, cursor: 'pointer',
+  },
 }

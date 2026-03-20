@@ -4,6 +4,7 @@ import { Stage, Layer, Line, Rect, Image as KonvaImage, Group } from 'react-konv
 import type Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import { startSession, identifyCanvas, transformCanvas } from '../api/canvas'
+import { saveArtworkToGallery } from '../api/user'
 import { useAuthStore } from '../stores/useAuthStore'
 import { Palette, FlipHorizontal2 } from 'lucide-react'
 
@@ -94,6 +95,8 @@ export default function Decalcomania() {
   const [customSubject, setCustomSubject] = useState('')
   const [showCustomInput, setShowCustomInput] = useState(false)
   const [result, setResult] = useState<{ imageUrl: string; style: string; story: string } | null>(null)
+  const [savedToGallery, setSavedToGallery] = useState(false)
+  const [savingToGallery, setSavingToGallery] = useState(false)
 
   // ─── 반응형 캔버스 ────────────────────────────────────
   useEffect(() => {
@@ -300,7 +303,7 @@ export default function Decalcomania() {
   const handleReset = () => {
     setHistory([{ strokes: [], fill: null }]); setHistoryIndex(0); setCurrentPoints([])
     setMirroredStrokes([]); setGuess(null); setConfirmedSubject('')
-    setResult(null); setIsEraser(false); setIsBucket(false); setPhase('drawing')
+    setResult(null); setSavedToGallery(false); setIsEraser(false); setIsBucket(false); setPhase('drawing')
   }
 
   const canDraw = phase === 'drawing'
@@ -656,10 +659,25 @@ export default function Decalcomania() {
                 <div style={{ height: 340, borderRadius: 16, overflow: 'hidden' }}>
                   <img src={result.imageUrl} alt="AI 변환 결과" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                 </div>
-                <a href={result.imageUrl} download="ai-drawing.png" target="_blank" rel="noreferrer" className="deco-soft"
-                  style={{ display: 'block', textAlign: 'center', padding: '9px 0', borderRadius: 10, border: '1.5px solid rgba(186,230,255,0.5)', background: 'white', fontSize: 13, fontWeight: 600, color: '#0ea5e9', cursor: 'pointer', textDecoration: 'none', transition: 'box-shadow 0.2s, transform 0.15s' }}>
+                <button
+                  onClick={async () => {
+                    try {
+                      const res = await fetch(result.imageUrl)
+                      const blob = await res.blob()
+                      const a = document.createElement('a')
+                      a.href = URL.createObjectURL(blob)
+                      a.download = 'ai-drawing.png'
+                      a.click()
+                      URL.revokeObjectURL(a.href)
+                    } catch {
+                      window.open(result.imageUrl, '_blank')
+                    }
+                  }}
+                  className="deco-soft"
+                  style={{ display: 'block', width: '100%', textAlign: 'center', padding: '9px 0', borderRadius: 10, border: '1.5px solid rgba(186,230,255,0.5)', background: 'white', fontSize: 13, fontWeight: 600, color: '#0ea5e9', cursor: 'pointer', transition: 'box-shadow 0.2s, transform 0.15s' }}
+                >
                   AI 그림 저장
-                </a>
+                </button>
               </div>
 
               {/* 동화 */}
@@ -677,6 +695,32 @@ export default function Decalcomania() {
               <button onClick={handleReset} className="deco-soft"
                 style={{ flex: 1, padding: '12px 0', borderRadius: 14, border: '1.5px solid rgba(186,230,255,0.5)', background: 'white', color: '#0ea5e9', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
                 다시 그리기
+              </button>
+              <button
+                onClick={async () => {
+                  if (savedToGallery || savingToGallery || !result) return
+                  setSavingToGallery(true)
+                  try {
+                    await saveArtworkToGallery(result.imageUrl, `data:image/png;base64,${canvasBase64}`, result.style, 'decalcomania')
+                    setSavedToGallery(true)
+                  } catch {
+                    // 실패 시 조용히 처리
+                  } finally {
+                    setSavingToGallery(false)
+                  }
+                }}
+                className="deco-soft"
+                style={{
+                  flex: 1, padding: '12px 0', borderRadius: 14,
+                  border: '1.5px solid rgba(186,230,255,0.5)',
+                  background: savedToGallery ? '#f0f9ff' : 'white',
+                  color: savedToGallery ? '#7dd3fc' : '#0ea5e9',
+                  fontSize: 14, fontWeight: 700, cursor: savedToGallery ? 'default' : 'pointer',
+                  opacity: savingToGallery ? 0.6 : 1,
+                }}
+                disabled={savedToGallery || savingToGallery}
+              >
+                {savingToGallery ? '저장 중...' : savedToGallery ? '✓ 갤러리에 저장됨' : '내 갤러리에 저장'}
               </button>
               <button onClick={() => navigate('/')} className="deco-glow"
                 style={{ flex: 1, padding: '12px 0', borderRadius: 14, border: 'none', background: 'linear-gradient(135deg, #0ea5e9, #38bdf8)', color: 'white', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(14,165,233,0.3)' }}>

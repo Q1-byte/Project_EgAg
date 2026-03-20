@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Stage, Layer, Line, Rect, Image as KonvaImage } from 'react-konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import { identifyCanvas, transformCanvas } from '../api/canvas'
+import { saveArtworkToGallery } from '../api/user'
 import { useAuthStore } from '../stores/useAuthStore'
 
 const COLORS = [
@@ -101,6 +102,8 @@ export default function Canvas() {
   const [customSubject, setCustomSubject] = useState('')
   const [showCustomInput, setShowCustomInput] = useState(false)
   const [result, setResult] = useState<{ imageUrl: string; style: string; story: string } | null>(null)
+  const [savedToGallery, setSavedToGallery] = useState(false)
+  const [savingToGallery, setSavingToGallery] = useState(false)
 
   // 캔버스 컨테이너 크기 추적
   useEffect(() => {
@@ -334,6 +337,7 @@ export default function Canvas() {
     setGuess(null)
     setConfirmedSubject('')
     setResult(null)
+    setSavedToGallery(false)
     setIsEraser(false)
     setIsBucket(false)
   }
@@ -965,21 +969,30 @@ export default function Canvas() {
                     style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                   />
                 </div>
-                <a
-                  href={result.imageUrl}
-                  download="ai-drawing.png"
-                  target="_blank"
-                  rel="noreferrer"
+                <button
+                  onClick={async () => {
+                    try {
+                      const res = await fetch(result.imageUrl)
+                      const blob = await res.blob()
+                      const a = document.createElement('a')
+                      a.href = URL.createObjectURL(blob)
+                      a.download = 'ai-drawing.png'
+                      a.click()
+                      URL.revokeObjectURL(a.href)
+                    } catch {
+                      window.open(result.imageUrl, '_blank')
+                    }
+                  }}
                   style={{
-                    display: 'block', textAlign: 'center', padding: '9px 0',
+                    display: 'block', width: '100%', textAlign: 'center', padding: '9px 0',
                     borderRadius: 10, border: '1.5px solid #ddd6fe', background: 'white',
                     fontSize: 13, fontWeight: 600, color: '#7c3aed', cursor: 'pointer',
-                    textDecoration: 'none', transition: 'box-shadow 0.2s, transform 0.15s',
+                    transition: 'box-shadow 0.2s, transform 0.15s',
                   }}
                   className="btn-glow-soft"
                 >
                   AI 그림 저장
-                </a>
+                </button>
               </div>
 
               {/* AI가 써준 동화 */}
@@ -1014,6 +1027,32 @@ export default function Canvas() {
                 }}
               >
                 다시 그리기
+              </button>
+              <button
+                onClick={async () => {
+                  if (savedToGallery || savingToGallery || !result) return
+                  setSavingToGallery(true)
+                  try {
+                    await saveArtworkToGallery(result.imageUrl, `data:image/png;base64,${canvasBase64}`, result.style, 'canvas')
+                    setSavedToGallery(true)
+                  } catch {
+                    // 실패 시 조용히 처리
+                  } finally {
+                    setSavingToGallery(false)
+                  }
+                }}
+                className="btn-glow-soft"
+                style={{
+                  flex: 1, padding: '12px 0', borderRadius: 14,
+                  border: '1.5px solid #ddd6fe',
+                  background: savedToGallery ? '#f3f0ff' : 'white',
+                  color: savedToGallery ? '#a78bfa' : '#7c3aed',
+                  fontSize: 14, fontWeight: 700, cursor: savedToGallery ? 'default' : 'pointer',
+                  opacity: savingToGallery ? 0.6 : 1,
+                }}
+                disabled={savedToGallery || savingToGallery}
+              >
+                {savingToGallery ? '저장 중...' : savedToGallery ? '✓ 갤러리에 저장됨' : '내 갤러리에 저장'}
               </button>
               <button
                 onClick={() => navigate('/')}
