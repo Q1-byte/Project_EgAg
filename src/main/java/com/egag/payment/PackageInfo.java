@@ -7,9 +7,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum PackageInfo {
 
-    BASIC("BASIC", "Basic", 10, 2900),
-    STANDARD("STANDARD", "Standard", 30, 7900),
-    PREMIUM("PREMIUM", "Premium", 100, 19900);
+    BASIC("BASIC", "Basic", 10, 1000),
+    STANDARD("STANDARD", "Standard", 30, 2850),
+    PREMIUM("PREMIUM", "Premium", 100, 8500),
+    ULTRA("ULTRA", "Ultra", 200, 16000);
 
     private final String id;
     private final String displayName;

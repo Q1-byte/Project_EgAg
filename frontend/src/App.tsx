@@ -1,6 +1,6 @@
-import { useEffect } from 'react' // 👈 useEffect 추가
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom' // 👈 hooks 추가
-import { useAuthStore } from './stores/useAuthStore' // 👈 스토어 임포트
+import { useEffect } from 'react'
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
+import { useAuthStore } from './stores/useAuthStore'
 import { useTokenRefresh } from './hooks/useTokenRefresh'
 
 // 페이지 컴포넌트들
@@ -21,8 +21,8 @@ import TimeAttack from './pages/TimeAttack'
 
 // 어드민 컴포넌트들
 import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminUserManagement from './pages/admin/AdminUserManagement';
-import UserManagement from './pages/admin/UserManagement';
+import AdminUserManagement from './pages/admin/UserManagement'; // ✅ 통합 관리 페이지
+// import UserManagement from './pages/admin/UserManagement'; // 👈 삭제 (더 이상 사용 안 함)
 import PaymentManagement from './pages/admin/PaymentManagement';
 import AdminSidebar from './pages/admin/AdminSidebar';
 
@@ -36,7 +36,7 @@ function OnboardingGuard() {
         if (needsOnboarding && location.pathname !== '/kakao-onboarding') {
             navigate('/kakao-onboarding', { replace: true })
         }
-    }, [needsOnboarding, location.pathname, navigate]) // 👈 navigate 의존성 추가
+    }, [needsOnboarding, location.pathname, navigate])
 
     return null
 }
@@ -87,8 +87,9 @@ function App() {
                 <Route path="/admin" element={<AdminSidebar />}>
                     <Route index element={<AdminDashboard />} />
                     <Route path="dashboard" element={<AdminDashboard />} />
+                    {/* ✅ 통합 유저 관리 (토큰 + 상태 변경) */}
                     <Route path="users" element={<AdminUserManagement />} />
-                    <Route path="all-users" element={<UserManagement />} />
+                    {/* ❌ path="all-users" 라우트 삭제됨 */}
                     <Route path="payments" element={<PaymentManagement />} />
                 </Route>
 

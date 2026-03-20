@@ -53,9 +53,10 @@ public class PaymentService {
 
     public List<PackageDto> getPackages() {
         return List.of(
-            new PackageDto("BASIC",    "Basic",    10,  2900,  false, false),
-            new PackageDto("STANDARD", "Standard", 30,  7900,  true,  false),
-            new PackageDto("PREMIUM",  "Premium",  100, 19900, false, true)
+            new PackageDto(PackageInfo.BASIC.getId(),    PackageInfo.BASIC.getDisplayName(),    PackageInfo.BASIC.getTokenAmount(),    PackageInfo.BASIC.getPrice(),    false, false),
+            new PackageDto(PackageInfo.STANDARD.getId(), PackageInfo.STANDARD.getDisplayName(), PackageInfo.STANDARD.getTokenAmount(), PackageInfo.STANDARD.getPrice(), true,  false),
+            new PackageDto(PackageInfo.PREMIUM.getId(),  PackageInfo.PREMIUM.getDisplayName(),  PackageInfo.PREMIUM.getTokenAmount(),  PackageInfo.PREMIUM.getPrice(),  false, true),
+            new PackageDto(PackageInfo.ULTRA.getId(),    PackageInfo.ULTRA.getDisplayName(),    PackageInfo.ULTRA.getTokenAmount(),    PackageInfo.ULTRA.getPrice(),    false, false)
         );
     }
 

@@ -9,7 +9,7 @@ interface HeaderProps {
 
 export default function Header({ hideOnScroll = false }: HeaderProps) {
   const navigate = useNavigate()
-  const { isAuthenticated, nickname, tokenBalance, logout, profileImageUrl } = useAuthStore()
+  const { isAuthenticated, nickname, tokenBalance, logout, profileImageUrl, role } = useAuthStore()
   const [visible, setVisible] = useState(true)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const profileRef = useRef<HTMLDivElement>(null)
@@ -127,6 +127,7 @@ export default function Header({ hideOnScroll = false }: HeaderProps) {
                   </div>
                   {[
                     { label: '마이페이지', onClick: () => { setShowProfileMenu(false); navigate('/mypage') } },
+                    ...(role === 'ADMIN' ? [{ label: '관리자 페이지', onClick: () => { setShowProfileMenu(false); navigate('/admin') } }] : []),
                     { label: '로그아웃', onClick: () => { setShowProfileMenu(false); handleLogout() }, danger: true },
                   ].map(({ label, onClick, danger }) => (
                     <button
