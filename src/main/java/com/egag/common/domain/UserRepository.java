@@ -2,6 +2,7 @@ package com.egag.common.domain;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, String> {
@@ -9,6 +10,7 @@ public interface UserRepository extends JpaRepository<User, String> {
     Optional<User> findByNickname(String nickname);
     boolean existsByEmail(String email);
     boolean existsByNickname(String nickname);
+    List<User> findByNicknameContainingIgnoreCase(String query);
     Optional<User> findBySubEmail(String subEmail);
     boolean existsBySubEmail(String subEmail);
     Optional<User> findByProviderAndProviderId(String provider, String providerId);

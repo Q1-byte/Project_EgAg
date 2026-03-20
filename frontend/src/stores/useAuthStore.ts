@@ -8,10 +8,11 @@ interface AuthState {
   accessToken: string | null
   isAuthenticated: boolean
   needsOnboarding: boolean
-  // role이 포함된 최종 setAuth 하나만 남깁니다.
+  profileImageUrl: string | null
   setAuth: (userId: string, nickname: string, role: string, tokenBalance: number, accessToken: string) => void
   setNeedsOnboarding: (value: boolean) => void
   setTokenBalance: (balance: number) => void
+  setProfileImageUrl: (url: string | null) => void
   logout: () => void
 }
 
@@ -27,6 +28,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   accessToken: getStoredValue('accessToken'),
   isAuthenticated: !!getStoredValue('accessToken'),
   needsOnboarding: getStoredValue('needsOnboarding') === 'true',
+  profileImageUrl: getStoredValue('profileImageUrl'),
 
   // 로그인 시 정보 저장
   setAuth: (userId, nickname, role, tokenBalance, accessToken) => {
@@ -57,14 +59,22 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ tokenBalance: balance })
   },
 
+  setProfileImageUrl: (url) => {
+    if (url) localStorage.setItem('profileImageUrl', url)
+    else localStorage.removeItem('profileImageUrl')
+    set({ profileImageUrl: url })
+  },
+
   logout: () => {
     // 로컬 스토리지 삭제
     localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
     localStorage.removeItem('userId')
     localStorage.removeItem('nickname')
     localStorage.removeItem('role')
     localStorage.removeItem('tokenBalance')
     localStorage.removeItem('needsOnboarding')
+    localStorage.removeItem('profileImageUrl')
 
     // Zustand 상태 초기화
     set({
@@ -74,7 +84,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       tokenBalance: 0,
       accessToken: null,
       isAuthenticated: false,
-      needsOnboarding: false
+      needsOnboarding: false,
+      profileImageUrl: null
     })
   },
 }))

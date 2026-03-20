@@ -1,33 +1,58 @@
 import { useNavigate } from 'react-router-dom'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import { useAuthStore } from '../stores/useAuthStore'
 import { Pencil, Layers, Ticket, Sparkles, Timer, ArrowRight, MessageCircle, ChevronUp } from 'lucide-react'
+import Header from '../components/Header'
+
+function SparkleStars() {
+  const stars = useMemo(() => {
+    const shapes = ['•', '·']
+    const colors = ['#ffffff', '#ffd43b', '#ffb3c6', '#a0c4ff', '#b5ead7', '#ffc8dd']
+    return Array.from({ length: 70 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: 8 + Math.random() * 14,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      shape: shapes[Math.floor(Math.random() * shapes.length)],
+      duration: 1.5 + Math.random() * 3,
+      delay: Math.random() * 4,
+      isCross: false,
+    }))
+  }, [])
+
+  return (
+    <div style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', overflow: 'hidden' }}>
+      {stars.map(s => (
+        <span key={s.id} style={{
+          position: 'absolute',
+          left: `${s.x}%`,
+          top: `${s.y}%`,
+          fontSize: s.size,
+          color: s.color,
+          animation: `${s.isCross ? 'twinkle-cross' : 'twinkle'} ${s.duration}s ease-in-out ${s.delay}s infinite`,
+          opacity: 0,
+          filter: `blur(${s.isCross ? 0 : 0.3}px) drop-shadow(0 0 ${s.size * 0.4}px ${s.color})`,
+          lineHeight: 1,
+        }}>
+          {s.shape}
+        </span>
+      ))}
+    </div>
+  )
+}
 
 export default function Home() {
   const navigate = useNavigate()
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
-  const nickname = useAuthStore(s => s.nickname)
   const tokenBalance = useAuthStore(s => s.tokenBalance)
-  const logout = useAuthStore(s => s.logout)
   const featureRefs = useRef<(HTMLDivElement | null)[]>([])
+  const featureSectionRef = useRef<HTMLElement | null>(null)
   const [showTop, setShowTop] = useState(false)
-  const [headerVisible, setHeaderVisible] = useState(true)
   const [showTokenModal, setShowTokenModal] = useState<'canvas' | 'deco' | 'time' | null>(null)
 
   useEffect(() => {
-    let lastY = window.scrollY
-    const onScroll = () => {
-      const currentY = window.scrollY
-      if (currentY <= 10) {
-        setHeaderVisible(true)
-      } else if (currentY < lastY) {
-        setHeaderVisible(true)
-      } else if (currentY > lastY + 4) {
-        setHeaderVisible(false)
-      }
-      lastY = currentY
-      setShowTop(currentY > 400)
-    }
+    const onScroll = () => setShowTop(window.scrollY > 400)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
@@ -38,6 +63,8 @@ export default function Home() {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
             entry.target.classList.add('feature-visible')
+          } else {
+            entry.target.classList.remove('feature-visible')
           }
         })
       },
@@ -47,16 +74,36 @@ export default function Home() {
     return () => observer.disconnect()
   }, [])
 
-  const handleLogout = () => {
-    logout()
-    navigate('/')
+  const handleStarCursor = (e: React.MouseEvent<HTMLElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    const stars = ['✦', '★', '✶', '✸', '⋆']
+    const colors = ['#fff', '#ffe066', '#c47a8a', '#a0c4ff', '#b5ead7']
+    const star = document.createElement('span')
+    star.textContent = stars[Math.floor(Math.random() * stars.length)]
+    star.style.cssText = `
+      position:absolute; left:${x}px; top:${y}px;
+      color:${colors[Math.floor(Math.random() * colors.length)]};
+      font-size:${12 + Math.random() * 14}px;
+      pointer-events:none; user-select:none; z-index:10;
+      animation:star-pop ${0.5 + Math.random() * 0.4}s ease-out forwards;
+    `
+    e.currentTarget.appendChild(star)
+    setTimeout(() => star.remove(), 900)
   }
 
   return (
     <div style={s.bg}>
       <style>{`
+        @keyframes star-pop { 0%{transform:translate(-50%,-50%) scale(0) rotate(0deg);opacity:1} 100%{transform:translate(-50%,-50%) scale(1.4) rotate(45deg);opacity:0} }
+        @keyframes twinkle { 0%,100%{opacity:0;transform:scale(0.4)} 50%{opacity:1;transform:scale(1)} }
+        @keyframes twinkle-cross { 0%,100%{opacity:0;transform:scale(0.3) rotate(0deg)} 50%{opacity:0.9;transform:scale(1) rotate(20deg)} }
         @keyframes float1 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-18px)} }
         @keyframes float2 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+        @keyframes blob1 { 0%{transform:translateY(0px)} 50%{transform:translateY(-80px)} 100%{transform:translateY(0px)} }
+        @keyframes blob2 { 0%{transform:translateY(0px)} 50%{transform:translateY(80px)} 100%{transform:translateY(0px)} }
+        @keyframes blob3 { 0%{transform:translateY(0px)} 50%{transform:translateY(-60px)} 100%{transform:translateY(0px)} }
         @keyframes scrollDot { 0%{transform:translateY(0);opacity:1} 80%{transform:translateY(14px);opacity:0} 100%{transform:translateY(0);opacity:0} }
         .scroll-dot { width:3px; height:5px; border-radius:2px; background:rgba(180,168,200,0.7); animation:scrollDot 1.8s ease infinite; }
         .scroll-hint { animation: float2 3s ease-in-out infinite; }
@@ -67,6 +114,7 @@ export default function Home() {
         .egag-cards { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; padding: 0 16px; }
         .egag-card  { width: clamp(260px, 28vw, 300px); }
         .egag-header-right span, .egag-header-right button { font-size: clamp(12px, 1.2vw, 14px) !important; }
+        .profile-avatar:hover { filter: brightness(1.1); transform: scale(1.06); }
         .fab-inquiry { transition: box-shadow 0.2s, transform 0.15s; }
         .fab-inquiry:hover { transform: scale(1.06); box-shadow: 0 8px 32px rgba(107,130,160,0.4) !important; }
         .fab-top { transition: box-shadow 0.2s, transform 0.3s, opacity 0.3s; }
@@ -124,32 +172,32 @@ export default function Home() {
 
       {/* 배경 blob */}
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: '-10%', left: '-8%', width: 480, height: 480, borderRadius: '50%', background: 'radial-gradient(circle, #d8e8f5 0%, transparent 70%)', animation: 'float1 7s ease-in-out infinite' }} />
-        <div style={{ position: 'absolute', top: '20%', right: '-10%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, #f2d8dc 0%, transparent 70%)', animation: 'float2 9s ease-in-out infinite' }} />
-        <div style={{ position: 'absolute', bottom: '5%', left: '20%', width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, #eddff5 0%, transparent 70%)', animation: 'float1 11s ease-in-out infinite' }} />
+        {/* 메인 blob들 */}
+        {/* 분홍 — 왼쪽 위 */}
+        <div style={{ position: 'absolute', top: '-15%', left: '-10%', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,150,180,0.25) 0%, transparent 65%)', animation: 'blob1 7s ease-in-out infinite', filter: 'blur(70px)' }} />
+        {/* 노랑 — 오른쪽 */}
+        <div style={{ position: 'absolute', top: '15%', right: '-12%', width: 560, height: 560, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,220,80,0.25) 0%, transparent 65%)', animation: 'blob2 9s ease-in-out infinite', filter: 'blur(70px)' }} />
+        {/* 파랑 — 아래 왼쪽 */}
+        <div style={{ position: 'absolute', bottom: '0%', left: '15%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(130,175,230,0.25) 0%, transparent 65%)', animation: 'blob3 11s ease-in-out infinite', filter: 'blur(70px)' }} />
+        {/* 보조 blob들 */}
+        <div style={{ position: 'absolute', top: '40%', left: '30%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,150,180,0.15) 0%, transparent 65%)', animation: 'blob2 13s ease-in-out infinite', filter: 'blur(80px)' }} />
+        <div style={{ position: 'absolute', top: '-5%', right: '25%', width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,220,80,0.18) 0%, transparent 65%)', animation: 'blob1 8s ease-in-out infinite 2s', filter: 'blur(65px)' }} />
+        {/* 배경 로고 워터마크 */}
+        <img
+          src="/Egag_logo-removebg.png"
+          alt=""
+          style={{
+            position: 'absolute', top: '50%', left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 'clamp(900px, 110vw, 1500px)',
+            opacity: 0.11,
+            filter: 'blur(0.5px) saturate(0.6)',
+            userSelect: 'none', pointerEvents: 'none',
+          }}
+        />
       </div>
 
-      {/* 헤더 */}
-      <header style={{ ...s.header, transform: headerVisible ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(calc(-100% - 24px))', transition: 'transform 0.35s cubic-bezier(0.4,0,0.2,1)' }}>
-        <div style={s.logo} onClick={() => navigate('/')} role="button">
-          <img src="/Egag_logo-removebg.png" alt="EgAg" style={{ height: 110 }} />
-        </div>
-        <div className="egag-header-right" style={s.headerRight}>
-          {isAuthenticated && nickname ? (
-            <>
-              <span style={s.userGreet}>{nickname}님 안녕하세요!</span>
-              <span style={{ ...s.tokenBadge, cursor: 'pointer' }} onClick={() => navigate('/token-shop')}><Ticket size={13} style={{ marginRight: 4, verticalAlign: 'middle' }} />{tokenBalance}개</span>
-              <button style={s.logoutBtn} onClick={() => navigate('/mypage')}>마이페이지</button>
-              <button style={s.logoutBtn} onClick={handleLogout}>로그아웃</button>
-            </>
-          ) : (
-            <>
-              <button style={s.loginBtn} onClick={() => navigate('/login')}>로그인</button>
-              <button style={s.signupBtn} onClick={() => navigate('/signup')}>회원가입</button>
-            </>
-          )}
-        </div>
-      </header>
+      <Header hideOnScroll />
 
       {/* 메인 */}
       <main style={s.main}>
@@ -176,7 +224,7 @@ export default function Home() {
             <p style={{ ...s.cardDesc, color: '#7a3a4a' }}>
               자유롭게 그리면 AI가 맞춰보고<br />동화 스타일 그림으로 변환해줘요
             </p>
-            <button className="start-btn" style={{ ...s.cardBtn, background: 'linear-gradient(135deg, #c47a8a, #a85a6a)' }}>
+            <button className="start-btn" style={{ ...s.cardBtn, background: '#ff5c8d' }}>
               시작하기
               <ArrowRight size={16} />
             </button>
@@ -192,7 +240,7 @@ export default function Home() {
             <p style={{ ...s.cardDesc, color: '#3a5a7a' }}>
               절반만 그리면 AI 미러가<br />반대쪽을 대칭으로 완성해줘요
             </p>
-            <button className="start-btn" style={{ ...s.cardBtn, background: 'linear-gradient(135deg, #6B82A0, #4a6a8a)' }}>
+            <button className="start-btn" style={{ ...s.cardBtn, background: '#4dabf7' }}>
               시작하기
               <ArrowRight size={16} />
             </button>
@@ -208,7 +256,7 @@ export default function Home() {
             <p style={{ ...s.cardDesc, color: '#7a6000' }}>
               주어진 주제를 제한 시간 안에 그려봐요.<br />AI가 맞히면 성공!
             </p>
-            <button className="start-btn" style={{ ...s.cardBtn, background: 'linear-gradient(135deg, #d4a800, #b08800)' }}>
+            <button className="start-btn" style={{ ...s.cardBtn, background: '#ffd43b', color: '#7a5500' }}>
               시작하기
               <ArrowRight size={16} />
             </button>
@@ -226,7 +274,8 @@ export default function Home() {
       </div>
 
       {/* 기능 소개 섹션 */}
-      <section style={s.featureSection}>
+      <section style={{ ...s.featureSection, position: 'relative' }} onMouseMove={handleStarCursor}>
+        <SparkleStars />
 
         {/* 별 레이어 */}
         <div className="star-field" style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', borderRadius: 'inherit' }} />
@@ -256,7 +305,7 @@ export default function Home() {
               캔버스에 자유롭게 그림을 그려보세요.<br />
               AI가 분석하고 카툰·동화·마법 3D<br />스타일로 변환해드려요.
             </p>
-            <button className="feat-cta" style={s.featCta} onClick={() => navigate(isAuthenticated ? '/canvas' : '/login')}>
+            <button className="feat-cta" style={s.featCta} onClick={() => isAuthenticated ? setShowTokenModal('canvas') : navigate('/login')}>
               시작하기
             </button>
           </div>
@@ -274,7 +323,7 @@ export default function Home() {
               캔버스 절반에만 그림을 그리면<br />
               AI 미러가 반대쪽을 대칭으로<br />완성해줘요.
             </p>
-            <button className="feat-cta" style={s.featCta} onClick={() => navigate(isAuthenticated ? '/decalcomania' : '/login')}>
+            <button className="feat-cta" style={s.featCta} onClick={() => isAuthenticated ? setShowTokenModal('deco') : navigate('/login')}>
               시작하기
             </button>
           </div>
@@ -292,7 +341,7 @@ export default function Home() {
               주어진 주제를 제한 시간 안에 그려요.<br />
               AI가 맞히면 성공! 친구·가족과<br />함께하면 더욱 재밌어요.
             </p>
-            <button className="feat-cta" style={s.featCta} onClick={() => navigate(isAuthenticated ? '/canvas' : '/login')}>
+            <button className="feat-cta" style={s.featCta} onClick={() => isAuthenticated ? setShowTokenModal('time') : navigate('/login')}>
               시작하기
             </button>
           </div>
@@ -394,7 +443,7 @@ export default function Home() {
               <button
                 onClick={() => {
                   setShowTokenModal(null)
-                  navigate(showTokenModal === 'deco' ? '/decalcomania' : '/canvas')
+                  navigate(showTokenModal === 'deco' ? '/decalcomania' : showTokenModal === 'time' ? '/time-attack' : '/canvas')
                 }}
                 style={{
                   flex: 1, padding: '13px', fontSize: 15, fontWeight: 700,
@@ -428,7 +477,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   header: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '0 28px', height: 70, overflow: 'hidden',
+    padding: '0 28px', height: 70, overflow: 'visible',
     background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(16px)',
     position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)',
     width: 'calc(100% - 48px)', maxWidth: 960,
@@ -472,17 +521,18 @@ const s: Record<string, React.CSSProperties> = {
     textTransform: 'uppercase',
   },
   mainTitle: {
-    fontSize: 48, fontWeight: 900, margin: '0 0 16px',
-    letterSpacing: -1.5, lineHeight: 1.2, padding: '4px 8px',
-    background: 'linear-gradient(135deg, #3a5a8a 0%, #c47a8a 100%)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
+    fontSize: 58, fontWeight: 900, margin: '0 0 16px',
+    letterSpacing: -1, lineHeight: 1.2, padding: '4px 8px',
+    fontFamily: "'Jua', sans-serif",
+    color: '#d4607a',
+    WebkitTextFillColor: '#d4607a',
   },
   mainDesc: {
     fontSize: 17, color: '#8a7a9a', margin: '0 0 60px', lineHeight: 1.7,
   },
   cards: {
     display: 'flex', gap: 32, justifyContent: 'center', flexWrap: 'wrap',
+    marginTop: 40,
   },
   cardCanvas: {
     background: 'linear-gradient(145deg, #fce8ed 0%, #f2d0d8 100%)',
@@ -523,7 +573,7 @@ const s: Record<string, React.CSSProperties> = {
   cardTag: {
     fontSize: 12, fontWeight: 600, borderRadius: 20, padding: '4px 12px',
   },
-  cardTitle: { fontSize: 24, fontWeight: 900, margin: 0 },
+  cardTitle: { fontSize: 24, fontWeight: 900, margin: 0, fontFamily: "'Jua', sans-serif" },
   cardDesc: { fontSize: 14, lineHeight: 1.75, margin: 0, flex: 1 },
   cardBtn: {
     width: '100%', padding: '14px', fontSize: 15, fontWeight: 700,
@@ -556,8 +606,9 @@ const s: Record<string, React.CSSProperties> = {
   featSectionTitle: {
     fontSize: 'clamp(32px, 4.5vw, 52px)' as unknown as number,
     fontWeight: 900, margin: 0,
-    letterSpacing: -2, lineHeight: 1.12,
+    letterSpacing: -1, lineHeight: 1.12,
     color: '#f0ecfa',
+    fontFamily: "'Jua', sans-serif",
   },
   featDivider: {
     width: 48, height: 3, borderRadius: 99,
@@ -594,7 +645,8 @@ const s: Record<string, React.CSSProperties> = {
   featureTitle: {
     fontSize: 'clamp(32px, 3.8vw, 52px)' as unknown as number,
     fontWeight: 900, margin: 0,
-    color: '#f0ecfa', letterSpacing: -1.5, lineHeight: 1.1,
+    color: '#f0ecfa', letterSpacing: -0.5, lineHeight: 1.1,
+    fontFamily: "'Jua', sans-serif",
   },
   featureDesc: {
     fontSize: 17, color: '#8888aa', lineHeight: 1.9, margin: 0,

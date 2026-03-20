@@ -599,7 +599,7 @@ export default function Canvas() {
             height={stageSize.height}
             style={{
               display: 'block',
-              cursor: canDraw ? (activeTool === 'eraser' ? 'cell' : activeTool === 'bucket' ? 'copy' : 'crosshair') : 'default',
+              cursor: canDraw ? (activeTool === 'eraser' ? 'cell' : activeTool === 'bucket' ? 'copy' : "url('/pencil-cursor.svg') 5 27, crosshair") : 'default',
               touchAction: 'none',
             }}
             onPointerDown={canDraw ? (isBucket ? handleBucketClick : handlePointerDown) : undefined}

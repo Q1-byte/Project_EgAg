@@ -37,15 +37,13 @@ public class AuthService implements UserDetailsService {
     // ─────────────────────────────────────────
 
     @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + email));
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        // 이메일 또는 ID(UUID)로 사용자 조회
+        User user = userRepository.findByEmail(username)
+                .or(() -> userRepository.findById(username))
+                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + username));
 
-        return org.springframework.security.core.userdetails.User.builder()
-                .username(user.getEmail())
-                .password(user.getPasswordHash() != null ? user.getPasswordHash() : "")
-                .roles(user.getRole() != null ? user.getRole() : "USER")
-                .build();
+        return new PrincipalDetails(user);
     }
 
     // ─────────────────────────────────────────
@@ -131,6 +129,7 @@ public class AuthService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다."));
         refreshTokenRepository.deleteByUser(user);
     }
+
 
     // ─────────────────────────────────────────
     // 비밀번호 찾기 (이름/별명/이메일 검증 후 메일 발송)

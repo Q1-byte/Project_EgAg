@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <g transform="rotate(45 16 16)">
+    <!-- 지우개 -->
+    <rect x="12" y="1" width="8" height="5" rx="2" fill="#ffb3c6" stroke="#1a1a2e" stroke-width="1.5"/>
+    <!-- 금속 밴드 -->
+    <rect x="12" y="5.5" width="8" height="2.5" fill="#ccc" stroke="#1a1a2e" stroke-width="1"/>
+    <!-- 몸통 (노랑) -->
+    <rect x="12" y="8" width="8" height="14" fill="#ffd43b" stroke="#1a1a2e" stroke-width="1.5"/>
+    <!-- 몸통 줄 -->
+    <line x1="12" y1="12" x2="20" y2="12" stroke="#e6b800" stroke-width="0.8"/>
+    <line x1="12" y1="17" x2="20" y2="17" stroke="#e6b800" stroke-width="0.8"/>
+    <!-- 나무 (갈색 삼각형) -->
+    <polygon points="12,22 20,22 16,27" fill="#c8845a" stroke="#1a1a2e" stroke-width="1.5" stroke-linejoin="round"/>
+    <!-- 심 -->
+    <polygon points="14.5,27 17.5,27 16,30" fill="#333" stroke="#1a1a2e" stroke-width="1" stroke-linejoin="round"/>
+  </g>
+</svg>

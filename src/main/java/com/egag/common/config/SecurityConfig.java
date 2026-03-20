@@ -42,16 +42,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/artworks/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/{id}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/{id}/artworks").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/search").permitAll()
-                        .requestMatchers("/api/inquiries").permitAll()
-
-                        // 2. ⭐ 우리가 만든 정책(Policy) API 허용 추가
+                        .requestMatchers(HttpMethod.GET, "/api/search/**").permitAll()
+                        .requestMatchers("/api/inquiries/**").permitAll()
                         .requestMatchers("/api/policy/**").permitAll()
-
-                        // 3. 나머지 설정 유지
                         .requestMatchers("/api/payments/webhook").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/payments/packages").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/payments/kakaopay/approve").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()

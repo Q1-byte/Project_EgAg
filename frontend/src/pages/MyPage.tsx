@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/useAuthStore'
+import Header from '../components/Header'
 import { getMyProfile, updateMyProfile, changePassword, getMyArtworks, uploadProfilePhoto } from '../api/user'
 import type { UserProfile, ArtworkSummary } from '../api/user'
 
@@ -8,7 +9,7 @@ type Tab = 'profile' | 'gallery'
 
 export default function MyPage() {
   const navigate = useNavigate()
-  const { isAuthenticated, nickname, tokenBalance, logout } = useAuthStore()
+  const { isAuthenticated, nickname, tokenBalance, logout, setProfileImageUrl } = useAuthStore()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [tab, setTab] = useState<Tab>('profile')
@@ -46,6 +47,7 @@ export default function MyPage() {
         setEditNickname(p.nickname || '')
         setEditPhone(p.phone || '')
         setEditEmail(p.subEmail || '')
+        if (p.profileImageUrl) setProfileImageUrl(p.profileImageUrl)
       })
       .catch(() => setProfileError(true))
       .finally(() => setLoadingProfile(false))
@@ -65,6 +67,7 @@ export default function MyPage() {
     try {
       const updated = await uploadProfilePhoto(file)
       setProfile(updated)
+      if (updated.profileImageUrl) setProfileImageUrl(updated.profileImageUrl)
     } catch {
       // 실패 시 조용히 처리
     } finally {
@@ -105,22 +108,7 @@ export default function MyPage() {
 
   return (
     <div style={s.bg}>
-      {/* 헤더 */}
-      <header style={s.header}>
-        <div style={s.logo} onClick={() => navigate('/')} role="button">
-          <img src="/Egag_logo-removebg.png" alt="EgAg" style={{ height: 110 }} />
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {isAuthenticated && nickname && (
-            <span style={s.userGreet}>{nickname}님 안녕하세요!</span>
-          )}
-          <span style={s.tokenBadge} onClick={() => navigate('/token-shop')} role="button">
-            🎟 {tokenBalance}개 보유 중
-          </span>
-          <button style={s.navBtn} onClick={() => navigate(-1)}>← 돌아가기</button>
-          <button style={{ ...s.navBtn, color: '#c47a8a', borderColor: '#e8c0cc' }} onClick={handleLogout}>로그아웃</button>
-        </div>
-      </header>
+      <Header />
 
       <main style={s.main}>
         <h1 style={s.title}>마이페이지</h1>
@@ -160,7 +148,7 @@ export default function MyPage() {
                   {photoLoading ? (
                     <div style={s.avatarPlaceholder}><span style={{ fontSize: 24 }}>⏳</span></div>
                   ) : profile.profileImageUrl ? (
-                    <img src={profile.profileImageUrl} alt="프로필" style={s.avatar} />
+                    <img src={profile.profileImageUrl.startsWith('/uploads') ? `http://localhost:8080${profile.profileImageUrl}` : profile.profileImageUrl} alt="프로필" style={s.avatar} />
                   ) : (
                     <div style={s.avatarPlaceholder}><span style={{ fontSize: 40 }}>👤</span></div>
                   )}
@@ -210,7 +198,7 @@ export default function MyPage() {
                   </button>
                   <button
                     style={{ ...s.secondaryBtn, flex: 1 }}
-                    onClick={() => { setShowEdit(v => !v); setEditMsg(''); setEditError('') }}
+                    onClick={() => navigate('/profile/edit')}
                   >
                     ✏️ 내 정보 변경
                   </button>

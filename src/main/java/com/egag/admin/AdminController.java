@@ -20,17 +20,15 @@ public class AdminController {
     // 📊 1. 대시보드 통계 데이터 API (진짜 데이터 연동)
     @GetMapping("/dashboard/stats")
     public ResponseEntity<AdminDashboardStatsResponse> getDashboardStats() {
-        // ✅ 이제 서비스에서 계산해온 '진짜' 통계를 반환합니다.
         AdminDashboardStatsResponse stats = adminService.getRealDashboardStats();
         return ResponseEntity.ok(stats);
     }
 
     // 📝 2. 토큰 지급 로그 전체 조회 API
     @GetMapping("/tokens/logs")
-    public ResponseEntity<List<AdminActionLog>> getTokenLogs() {
+    public ResponseEntity<List<?>> getTokenLogs() {
         return ResponseEntity.ok(adminService.getAllTokenLogs());
     }
-
     // 👥 3. 전체 유저 목록 조회 API
     @GetMapping("/users/all")
     public ResponseEntity<List<?>> getAllUsers() {
@@ -42,6 +40,14 @@ public class AdminController {
     public ResponseEntity<?> searchUser(@RequestParam String nickname) {
         return ResponseEntity.ok(userRepository.findByNickname(nickname)
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다.")));
+    }
+
+    // 🚫 [추가] 8. 유저 활성/정지 상태 토글 API
+    // 프론트에서 /api/admin/users/{userId}/status 로 요청을 보내면 됩니다.
+    @PatchMapping("/users/{userId}/status")
+    public ResponseEntity<String> toggleUserStatus(@PathVariable String userId) {
+        adminService.toggleUserStatus(userId);
+        return ResponseEntity.ok("유저 상태가 성공적으로 변경되었습니다.");
     }
 
     // 💰 5. 수동 토큰 지급 API

@@ -1,6 +1,7 @@
-import { useEffect } from 'react' // 👈 useEffect 추가
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom' // 👈 hooks 추가
-import { useAuthStore } from './stores/useAuthStore' // 👈 스토어 임포트
+import { useEffect } from 'react'
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
+import { useAuthStore } from './stores/useAuthStore'
+import { useTokenRefresh } from './hooks/useTokenRefresh'
 
 // 페이지 컴포넌트들
 import Canvas from './pages/Canvas'
@@ -16,11 +17,21 @@ import KakaoOnboarding from './pages/KakaoOnboarding'
 import Policy from './pages/Policy'
 import TokenShop from './pages/TokenShop'
 import MyPage from './pages/MyPage'
+import TimeAttack from './pages/TimeAttack'
+
+// 상준 파트 페이지 컴포넌트들
+import Explore from './artwork/Explore'
+import ArtworkDetail from './artwork/ArtworkDetail'
+import UserProfile from './artwork/UserProfile'
+import Gallery from './artwork/Gallery'
+import Notifications from './artwork/Notifications'
+import Search from './artwork/Search'
+import EditProfile from './artwork/EditProfile'
 
 // 어드민 컴포넌트들
 import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminUserManagement from './pages/admin/AdminUserManagement';
-import UserManagement from './pages/admin/UserManagement';
+import AdminUserManagement from './pages/admin/UserManagement'; // ✅ 통합 관리 페이지
+// import UserManagement from './pages/admin/UserManagement'; // 👈 삭제 (더 이상 사용 안 함)
 import PaymentManagement from './pages/admin/PaymentManagement';
 import AdminSidebar from './pages/admin/AdminSidebar';
 
@@ -34,12 +45,13 @@ function OnboardingGuard() {
         if (needsOnboarding && location.pathname !== '/kakao-onboarding') {
             navigate('/kakao-onboarding', { replace: true })
         }
-    }, [needsOnboarding, location.pathname, navigate]) // 👈 navigate 의존성 추가
+    }, [needsOnboarding, location.pathname, navigate])
 
     return null
 }
 
 function App() {
+    useTokenRefresh()
     return (
         <>
             <OnboardingGuard />
@@ -52,17 +64,19 @@ function App() {
                 <Route path="/canvas/:id" element={<Canvas />} />
                 <Route path="/decalcomania" element={<Decalcomania />} />
                 <Route path="/decalcomania/:id" element={<Decalcomania />} />
+                <Route path="/time-attack" element={<TimeAttack />} />
 
                 {/* 준비 중인 페이지들 */}
-                <Route path="/gallery" element={<div>Gallery</div>} />
-                <Route path="/explore" element={<div>Explore</div>} />
-                <Route path="/artwork/:id" element={<div>Artwork Detail</div>} />
-                <Route path="/user/:id" element={<div>User Profile</div>} />
-                <Route path="/search" element={<div>Search</div>} />
-                <Route path="/notifications" element={<div>Notifications</div>} />
+                <Route path="/gallery" element={<Gallery />} />
+                <Route path="/explore" element={<Explore />} />
+                <Route path="/artwork/:id" element={<ArtworkDetail />} />
+                <Route path="/user/:id" element={<UserProfile />} />
+                <Route path="/search" element={<Search />} />
+                <Route path="/notifications" element={<Notifications />} />
                 <Route path="/pricing" element={<div>Pricing</div>} />
                 <Route path="/billing" element={<div>Billing</div>} />
                 <Route path="/profile" element={<div>Profile</div>} />
+                <Route path="/profile/edit" element={<EditProfile />} />
 
                 {/* 고객지원 및 약관 */}
                 <Route path="/contact" element={<Inquiry />} />
@@ -83,8 +97,9 @@ function App() {
                 <Route path="/admin" element={<AdminSidebar />}>
                     <Route index element={<AdminDashboard />} />
                     <Route path="dashboard" element={<AdminDashboard />} />
+                    {/* ✅ 통합 유저 관리 (토큰 + 상태 변경) */}
                     <Route path="users" element={<AdminUserManagement />} />
-                    <Route path="all-users" element={<UserManagement />} />
+                    {/* ❌ path="all-users" 라우트 삭제됨 */}
                     <Route path="payments" element={<PaymentManagement />} />
                 </Route>
 
