@@ -58,7 +58,7 @@ export interface AdminPaymentRecord {
 
 // ✅ 어드민 결제 내역 전체 조회 API 추가
 export const getAdminPayments = () =>
-    client.get<AdminPaymentRecord[]>('/admin/payments').then(res => res.data)
+    client.get<AdminPaymentRecord[]>('/admin/payment-list').then(res => res.data)
 
 // ✅ 결제 취소 API 추가 (필요시)
 export const cancelAdminPayment = (paymentId: string) =>

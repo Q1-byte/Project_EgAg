@@ -26,10 +26,9 @@ public class AdminController {
 
     // 📝 2. 토큰 지급 로그 전체 조회 API
     @GetMapping("/tokens/logs")
-    public ResponseEntity<List<AdminActionLog>> getTokenLogs() {
+    public ResponseEntity<List<?>> getTokenLogs() {
         return ResponseEntity.ok(adminService.getAllTokenLogs());
     }
-
     // 👥 3. 전체 유저 목록 조회 API
     @GetMapping("/users/all")
     public ResponseEntity<List<?>> getAllUsers() {

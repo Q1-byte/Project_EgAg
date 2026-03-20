@@ -1,43 +1,37 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import { Navigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/useAuthStore';
-
-// 💳 DB 컬럼명에 맞춘 타입 정의
-interface Payment {
-    id: string;          // b3d94727...
-    userId: string;      // 107ecf42...
-    amount: number;      // 2900
-    status: string;      // 'paid' (DB 데이터 확인됨)
-    payMethod: string;   // 'tosspay'
-    orderName: string;   // 'Basic'
-    orderId: string;     // egag_basic_...
-    createdAt: string;   // 2026-03-19...
-    userNickname?: string; // 조인 데이터가 없을 경우를 대비
-}
+// ✅ TS1484 해결: type-only import 사용
+import type { AdminPaymentRecord } from '../../api/payment';
+import { getAdminPayments } from '../../api/payment';
 
 const PaymentManagement = () => {
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
     const role = useAuthStore((state) => state.role);
     const accessToken = useAuthStore((state) => state.accessToken);
 
-    const [payments, setPayments] = useState<Payment[]>([]);
+    const [payments, setPayments] = useState<AdminPaymentRecord[]>([]);
     const [loading, setLoading] = useState(true);
-
-    const getAuthHeader = useCallback(() => ({
-        headers: { Authorization: `Bearer ${accessToken}` }
-    }), [accessToken]);
 
     const fetchPayments = useCallback(async () => {
         if (!accessToken) return;
+
         try {
             setLoading(true);
-            const res = await axios.get('/api/admin/payments', getAuthHeader());
+            const data = await getAdminPayments();
 
-            // 데이터 구조 유연하게 처리 (res.data 또는 res.data.content)
-            const incomingData = Array.isArray(res.data)
-                ? res.data
-                : (res.data?.content || res.data?.data || []);
+            console.log("💰 관리자 결제 내역 데이터:", data);
+
+            // ✅ ESLint any 에러 해결: 알 수 없는 데이터 구조를 안전하게 타입 가드
+            let incomingData: AdminPaymentRecord[] = [];
+
+            if (Array.isArray(data)) {
+                incomingData = data;
+            } else if (data && typeof data === 'object') {
+                // 데이터가 객체 안에 감싸져 있는 경우 안전하게 접근
+                const record = data as { content?: AdminPaymentRecord[]; data?: AdminPaymentRecord[] };
+                incomingData = record.content || record.data || [];
+            }
 
             setPayments(incomingData);
         } catch (err) {
@@ -45,28 +39,21 @@ const PaymentManagement = () => {
         } finally {
             setLoading(false);
         }
-    }, [accessToken, getAuthHeader]);
+    }, [accessToken]);
 
     useEffect(() => {
-        if (isAuthenticated && (role === 'ADMIN' || String(role) === '100') && accessToken) {
-            fetchPayments();
+        const isAdmin = role === 'ADMIN' || String(role) === '100';
+        if (isAuthenticated && isAdmin && accessToken) {
+            // ✅ "Promise ignored" 에러 해결: void 연산자로 명시적 처리
+            void fetchPayments();
         }
     }, [isAuthenticated, role, accessToken, fetchPayments]);
 
-    // 🎨 DB의 'paid' 상태를 포함한 스타일 처리
     const getStatusStyle = (status: string) => {
         const s = String(status).toLowerCase();
-        switch (s) {
-            case 'paid':
-            case 'success':
-                return { backgroundColor: '#10B981', color: '#fff' }; // 초록색
-            case 'cancelled':
-            case 'cancel':
-            case 'fail':
-                return { backgroundColor: '#EF4444', color: '#fff' }; // 빨간색
-            default:
-                return { backgroundColor: '#F59E0B', color: '#fff' }; // 주황색 (ready, pending 등)
-        }
+        if (s === 'paid' || s === 'success') return { backgroundColor: '#10B981', color: '#fff' };
+        if (s === 'cancelled' || s === 'cancel' || s === 'fail') return { backgroundColor: '#EF4444', color: '#fff' };
+        return { backgroundColor: '#F59E0B', color: '#fff' };
     };
 
     if (!isAuthenticated || (role !== 'ADMIN' && String(role) !== '100')) {
@@ -77,7 +64,7 @@ const PaymentManagement = () => {
         <div style={s.container}>
             <header style={s.header}>
                 <h1 style={s.title}>💳 결제 내역 관리</h1>
-                <p style={s.meta}>DB의 실시간 결제 이력을 관리합니다.</p>
+                <p style={s.meta}>서비스 내 모든 결제 이력을 확인합니다.</p>
             </header>
 
             <div style={s.tableSection}>
@@ -101,7 +88,7 @@ const PaymentManagement = () => {
                                 <tr key={p.id} style={s.tr}>
                                     <td style={s.td}>{new Date(p.createdAt).toLocaleString()}</td>
                                     <td style={{...s.td, fontWeight: 700}}>
-                                        {p.userNickname || `ID: ${p.userId.slice(0, 8)}...`}
+                                        {p.userNickname || `ID: ${p.userId?.slice(0, 8) ?? 'Unknown'}`}
                                     </td>
                                     <td style={s.td}>{p.orderName}</td>
                                     <td style={{...s.td, color: '#4F46E5', fontWeight: 800}}>

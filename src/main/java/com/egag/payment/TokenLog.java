@@ -1,6 +1,7 @@
 package com.egag.payment;
 
 import com.egag.common.domain.User;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties; // ✅ 추가
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -20,6 +21,8 @@ public class TokenLog {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    // ✅ JPA 프록시 객체의 내부 필드(handler 등)가 JSON으로 변환되는 것을 방지합니다.
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User user;
 
     @Column(nullable = false)
@@ -39,6 +42,8 @@ public class TokenLog {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id")
+    // ✅ 관리자 정보도 동일하게 설정합니다.
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User admin;
 
     @CreationTimestamp

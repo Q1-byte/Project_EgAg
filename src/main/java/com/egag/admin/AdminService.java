@@ -4,6 +4,7 @@ import com.egag.admin.dto.AdminDashboardStatsResponse;
 import com.egag.common.domain.User;
 import com.egag.common.domain.UserRepository;
 import com.egag.payment.PaymentRepository;
+import com.egag.payment.TokenLogRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +15,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AdminService {
 
+    private final TokenLogRepository tokenLogRepository;
     private final UserRepository userRepository;
     private final AdminActionLogRepository logRepository;
     private final PaymentRepository paymentRepository;
@@ -55,20 +57,24 @@ public class AdminService {
         // 💡 팁: 실제 운영 환경에서는 누가 정지시켰는지 AdminActionLog에 기록을 남기는 것이 좋습니다.
     }
 
-    // ✅ 모든 토큰 지급 로그 조회
+    // ✅ 모든 토큰 로그 조회 (전체 이력 통합)
     @Transactional(readOnly = true)
-    public List<AdminActionLog> getAllTokenLogs() {
-        return logRepository.findAllByOrderByCreatedAtDesc();
+    public List<?> getAllTokenLogs() {
+        // 이제 TokenLog 테이블을 조회하므로 가입, 구매, 수동지급 내역이 모두 나옵니다.
+        return tokenLogRepository.findAllByOrderByCreatedAtDesc();
     }
 
+    // 💰 수동 토큰 지급 로직
     @Transactional
     public void giveManualToken(String adminId, String userId, Integer amount, String reason) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
 
+        // 1. 유저 토큰 잔액 업데이트
         user.addToken(amount);
 
-        AdminActionLog log = AdminActionLog.builder()
+        // 2. 관리자 작업 로그 기록 (누가 누구에게 줬는지 관리자 전용 기록)
+        AdminActionLog adminLog = AdminActionLog.builder()
                 .adminId(adminId)
                 .targetUserId(userId)
                 .targetNickname(user.getNickname())
@@ -76,7 +82,18 @@ public class AdminService {
                 .reason(reason)
                 .createdAt(LocalDateTime.now())
                 .build();
+        logRepository.save(adminLog);
 
-        logRepository.save(log);
+        // 3. 🌟 실제 토큰 변동 이력(TokenLog)에도 기록 (이걸 해야 목록에 뜹니다!)
+        com.egag.payment.TokenLog tokenLog = com.egag.payment.TokenLog.builder()
+                .id(java.util.UUID.randomUUID().toString())
+                .user(user)
+                .amount(amount)
+                .balanceAfter(user.getTokenBalance()) // 유저 엔티티의 현재 잔액 필드명 확인 필요
+                .type("MANUAL") // 수동 지급 구분
+                .reason(reason)
+                .createdAt(LocalDateTime.now())
+                .build();
+        tokenLogRepository.save(tokenLog);
     }
 }

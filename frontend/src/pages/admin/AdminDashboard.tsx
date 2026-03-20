@@ -97,7 +97,7 @@ const AdminDashboard = () => {
             <div style={s.quickMenu}>
                 <h3 style={s.sectionSubTitle}>🚀 빠른 관리 메뉴</h3>
                 <div style={{display: 'flex', gap: '15px'}}>
-                    <button style={s.menuBtn} onClick={() => window.location.href='/admin/users'}>토큰 관리하기</button>
+                    <button style={s.menuBtn} onClick={() => window.location.href='/admin/users'}>통합 관리하기</button>
                     <button style={s.menuBtn} onClick={() => window.location.href='/admin/payments'}>결제 내역보기</button>
                 </div>
             </div>

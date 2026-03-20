@@ -21,7 +21,7 @@ import TimeAttack from './pages/TimeAttack'
 
 // 어드민 컴포넌트들
 import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminUserManagement from './pages/admin/AdminUserManagement'; // ✅ 통합 관리 페이지
+import AdminUserManagement from './pages/admin/UserManagement'; // ✅ 통합 관리 페이지
 // import UserManagement from './pages/admin/UserManagement'; // 👈 삭제 (더 이상 사용 안 함)
 import PaymentManagement from './pages/admin/PaymentManagement';
 import AdminSidebar from './pages/admin/AdminSidebar';
