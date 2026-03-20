@@ -45,11 +45,7 @@ export default function Login() {
       if (res.refreshToken) localStorage.setItem('refreshToken', res.refreshToken)
       setAuth(res.userId, res.nickname, res.role, res.tokenBalance, res.accessToken)
 
-      if (res.role === 'ADMIN') {
-        navigate('/admin/dashboard');
-      } else {
-        navigate('/');
-      }
+      navigate('/')
 
     } catch (err: unknown) {
       console.error("로그인 에러 상세:", err);
