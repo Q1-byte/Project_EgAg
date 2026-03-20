@@ -43,6 +43,9 @@ public class PaymentService {
     @Value("${app.base-url:http://localhost:5173}")
     private String appBaseUrl;
 
+    @Value("${app.backend-url:http://localhost:8080}")
+    private String backendBaseUrl;
+
     private static final String ACCOUNT_HOLDER = "데칼코";
     private static final Map<String, String[]> BANK_ACCOUNTS = Map.of(
         "kakao",  new String[]{"카카오뱅크",  "3333-01-1234567"},
@@ -160,7 +163,7 @@ public class PaymentService {
         body.put("quantity", 1);
         body.put("total_amount", pkg.getPrice());
         body.put("tax_free_amount", 0);
-        body.put("approval_url", "http://localhost:8080/api/payments/kakaopay/approve?order_id=" + merchantUid);
+        body.put("approval_url", backendBaseUrl + "/api/payments/kakaopay/approve?order_id=" + merchantUid);
         body.put("cancel_url", appBaseUrl + "/token-shop?status=cancel");
         body.put("fail_url", appBaseUrl + "/token-shop?status=fail");
 

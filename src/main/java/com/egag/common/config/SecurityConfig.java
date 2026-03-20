@@ -47,6 +47,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/inquiries/**").permitAll()
                         .requestMatchers("/api/policy/**").permitAll()
                         .requestMatchers("/api/payments/webhook").permitAll()
+                        .requestMatchers("/api/payments/kakaopay/approve").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
