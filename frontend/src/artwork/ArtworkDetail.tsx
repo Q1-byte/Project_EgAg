@@ -148,6 +148,7 @@ export default function ArtworkDetail() {
 
       <Header />
 
+
       <main style={s.main}>
         <div style={s.layout}>
           {/* 이미지 패널 */}
@@ -194,9 +195,14 @@ export default function ArtworkDetail() {
                 </div>
               </div>
             </div>
-            <button onClick={() => navigate('/explore')} style={s.galleryHomeBtn} className="detail-home-btn">
-              갤러리 홈으로 돌아가기
-            </button>
+            <div style={s.imageTitleBar}>
+              <h2 style={s.artworkTitle}>{artwork.title}</h2>
+              <div style={s.carouselControls}>
+                <button onClick={() => navigate('/explore')} style={s.galleryHomeBtn} className="detail-home-btn">
+                  갤러리 홈으로 돌아가기
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* 정보 패널 */}
