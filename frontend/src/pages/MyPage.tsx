@@ -123,7 +123,9 @@ export default function MyPage() {
     try {
       await deleteArtwork(id)
       setArtworks(prev => prev.filter(a => a.id !== id))
-    } catch { /* 실패 시 무시 */ }
+    } catch (err: any) {
+      alert(err?.response?.data?.error?.message ?? '삭제에 실패했습니다.')
+    }
   }
 
   const handleDownload = async (imageUrl: string, title: string) => {

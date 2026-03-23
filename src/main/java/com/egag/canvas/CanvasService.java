@@ -15,7 +15,8 @@ public class CanvasService {
     private final ImageTransformService imageTransformService;
 
     private static final List<String> TOPICS = List.of(
-            "나비", "하트", "꽃", "얼굴", "왕관", "별", "크리스마스트리", "로켓", "문어", "부엉이"
+            "나비", "하트", "꽃", "얼굴", "왕관", "별", "크리스마스트리", "로켓", "문어", "부엉이",
+            "고양이", "강아지", "물고기", "집", "무지개", "케이크", "펭귄", "토끼"
     );
 
     public StartSessionResponse startSession(String nickname) {
