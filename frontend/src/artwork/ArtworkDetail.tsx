@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { getArtwork, toggleLikeArtwork, reportArtwork } from '../api/artwork'
+import { toggleFollowUser, getUserProfile } from '../api/user'
+import { useAuthStore } from '../stores/useAuthStore'
+import { UserPlus, UserCheck } from 'lucide-react'
 import type { ArtworkResponse } from '../types'
 import Header from '../components/Header'
 import LikeButton from '../components/LikeButton'
@@ -15,6 +18,9 @@ export default function ArtworkDetail() {
   const [loading, setLoading] = useState(true)
   const [slideIndex, setSlideIndex] = useState(0)
   const [isLiked, setIsLiked] = useState(false)
+  const [isFollowing, setIsFollowing] = useState(false)
+  const [followerCount, setFollowerCount] = useState(0)
+  const { userId: currentUserId } = useAuthStore()
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [reportReason, setReportReason] = useState('부적절한 콘텐츠')
   const [reportDescription, setReportDescription] = useState('')
@@ -23,7 +29,13 @@ export default function ArtworkDetail() {
   useEffect(() => {
     if (!id) return
     getArtwork(id)
-      .then(data => setArtwork(data))
+      .then(data => {
+        setArtwork(data)
+        setIsLiked(data.isLiked || false)
+        setIsFollowing(data.isFollowing || false)
+        // 작가의 팔로워 수를 가져오기 위해 별도 호출 (데이터 정합성)
+        getUserProfile(data.userId).then(u => setFollowerCount(u.followerCount))
+      })
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [id])
@@ -33,9 +45,28 @@ export default function ArtworkDetail() {
     try {
       await toggleLikeArtwork(id)
       setIsLiked(!isLiked)
-      setArtwork({ ...artwork, likeCount: isLiked ? artwork.likeCount - 1 : artwork.likeCount + 1 })
+      setArtwork({ ...artwork, likeCount: isLiked ? (artwork.likeCount || 0) - 1 : (artwork.likeCount || 0) + 1 })
     } catch (error) {
       console.error('Failed to toggle like:', error)
+    }
+  }
+
+  const handleFollow = async () => {
+    if (!artwork) return
+    if (!currentUserId) {
+      if (confirm('팔로우하려면 로그인이 필요합니다. 로그인 페이지로 이동할까요?')) {
+        navigate('/login')
+      }
+      return
+    }
+    if (artwork.userId === currentUserId) return
+    
+    try {
+      await toggleFollowUser(artwork.userId)
+      setIsFollowing(!isFollowing)
+      setFollowerCount(prev => isFollowing ? prev - 1 : prev + 1)
+    } catch (error) {
+      console.error('Failed to toggle follow:', error)
     }
   }
 
@@ -174,16 +205,38 @@ export default function ArtworkDetail() {
             <div style={s.card}>
               <h1 style={s.artTitle}>{artwork.title || stateTitle || 'hi!'}</h1>
 
-              {/* 작가 */}
-              <Link to={`/user/${artwork.userId}`} style={s.creatorRow}>
-                <div style={s.creatorAvatar}>
-                  {artwork.userNickname ? artwork.userNickname[0].toUpperCase() : 'A'}
-                </div>
-                <div>
-                  <p style={{ margin: 0, fontSize: 11, color: '#a09ab0', fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase' }}>그린 사람</p>
-                  <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#6B82A0' }}>{artwork.userNickname || '익명의 화가'}</p>
-                </div>
-              </Link>
+              {/* 작가 정보 섹션 개선 */}
+              <div style={s.creatorSection}>
+                <Link to={`/user/${artwork.userId}`} style={s.creatorInfo}>
+                  <div style={s.creatorAvatar}>
+                    {artwork.userNickname ? artwork.userNickname[0].toUpperCase() : 'A'}
+                  </div>
+                  <div>
+                    <p style={s.creatorLabel}>그린 사람</p>
+                    <p style={s.creatorName}>{artwork.userNickname || '익명의 화가'}</p>
+                    <p style={s.followerText}>팔로워 {followerCount}명</p>
+                  </div>
+                </Link>
+
+                {/* 작가 본인이 아닐 때만 노출 (로그인 안 한 경우 포함) */}
+                {artwork.userId !== currentUserId && (
+                  <button 
+                    onClick={handleFollow}
+                    style={{
+                      ...s.followBtn,
+                      background: isFollowing ? 'rgba(107, 130, 160, 0.1)' : 'linear-gradient(135deg, #c47a8a, #6B82A0)',
+                      color: isFollowing ? '#6B82A0' : '#fff',
+                      border: isFollowing ? '1.5px solid rgba(107, 130, 160, 0.2)' : 'none',
+                    }}
+                  >
+                    {isFollowing ? (
+                      <><UserCheck size={14} style={{ marginRight: 4 }} />팔로잉</>
+                    ) : (
+                      <><UserPlus size={14} style={{ marginRight: 4 }} />팔로우</>
+                    )}
+                  </button>
+                )}
+              </div>
 
               {/* 통계 */}
               <div style={s.statsGrid}>
@@ -284,7 +337,7 @@ export default function ArtworkDetail() {
 const s: Record<string, React.CSSProperties> = {
   bg: {
     minHeight: '100vh',
-    background: 'linear-gradient(160deg, #f5f0f8 0%, #ede8f2 40%, #f0eee9 100%)',
+    background: 'var(--mesh-candy)',
     display: 'flex',
     flexDirection: 'column',
     position: 'relative',
@@ -425,7 +478,8 @@ const s: Record<string, React.CSSProperties> = {
     flex: 1,
     borderRadius: 28,
     overflow: 'hidden',
-    background: 'linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(245,240,248,0.85) 100%)',
+    background: 'rgba(255, 255, 255, 0.7)',
+    backdropFilter: 'blur(10px)',
     border: '1.5px solid rgba(255,255,255,0.75)',
     boxShadow: '0 8px 48px rgba(107,130,160,0.15)',
     minHeight: 360,
@@ -463,7 +517,8 @@ const s: Record<string, React.CSSProperties> = {
     gap: 16,
   },
   card: {
-    background: 'linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(245,240,248,0.85) 100%)',
+    background: 'rgba(255, 255, 255, 0.7)',
+    backdropFilter: 'blur(10px)',
     border: '1.5px solid rgba(255,255,255,0.75)',
     borderRadius: 28,
     padding: '32px 28px',
@@ -494,15 +549,35 @@ const s: Record<string, React.CSSProperties> = {
     backgroundClip: 'text',
     lineHeight: 1.3,
   },
-  creatorRow: {
+  creatorSection: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    background: 'rgba(107, 130, 160, 0.05)',
+    borderRadius: 20,
+    padding: '14px 18px',
+    border: '1px solid rgba(107, 130, 160, 0.1)',
+  },
+  creatorInfo: {
     display: 'flex',
     alignItems: 'center',
     gap: 12,
     textDecoration: 'none',
-    background: 'rgba(107,130,160,0.06)',
-    borderRadius: 16,
-    padding: '12px 16px',
-    border: '1px solid rgba(107,130,160,0.1)',
+  },
+  creatorLabel: { margin: 0, fontSize: 10, color: '#a09ab0', fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase' },
+  creatorName: { margin: '2px 0', fontSize: 15, fontWeight: 800, color: '#4a5a7a' },
+  followerText: { margin: 0, fontSize: 11, color: '#a09ab0', fontWeight: 500 },
+  followBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    padding: '8px 16px',
+    borderRadius: 12,
+    fontSize: 13,
+    fontWeight: 700,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    boxShadow: '0 4px 12px rgba(107, 130, 160, 0.15)',
   },
   creatorAvatar: {
     width: 40,
@@ -588,7 +663,8 @@ const s: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
   },
   storyCard: {
-    background: 'linear-gradient(135deg, rgba(255,255,255,0.85) 0%, rgba(245,240,248,0.75) 100%)',
+    background: 'rgba(255, 255, 255, 0.5)',
+    backdropFilter: 'blur(10px)',
     border: '1.5px solid rgba(255,255,255,0.7)',
     borderRadius: 20,
     padding: '20px 24px',

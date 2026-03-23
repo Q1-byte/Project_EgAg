@@ -157,8 +157,8 @@ export default function Explore() {
                     </div>
                   ))}
                 </div>
-                <div style={{ ...s.fadeMask, left: 0, background: 'linear-gradient(to right, #ede8f2 0%, transparent 100%)' }} />
-                <div style={{ ...s.fadeMask, right: 0, background: 'linear-gradient(to left, #ede8f2 0%, transparent 100%)' }} />
+                <div style={{ ...s.fadeMask, left: 0, background: 'linear-gradient(to right, rgba(237, 232, 242, 0.8) 0%, transparent 100%)' }} />
+                <div style={{ ...s.fadeMask, right: 0, background: 'linear-gradient(to left, rgba(237, 232, 242, 0.8) 0%, transparent 100%)' }} />
               </div>
             </section>
           </>
@@ -171,7 +171,7 @@ export default function Explore() {
 const s: Record<string, React.CSSProperties> = {
   bg: {
     minHeight: '100vh',
-    background: 'linear-gradient(160deg, #f5f0f8 0%, #ede8f2 40%, #f0eee9 100%)',
+    background: 'var(--mesh-candy)',
     display: 'flex',
     flexDirection: 'column',
     position: 'relative',

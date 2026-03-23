@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { getUserProfile, getUserArtworks, toggleFollowUser } from '../api/user'
 import { toggleLikeArtwork } from '../api/artwork'
+import { useAuthStore } from '../stores/useAuthStore'
 import type { UserResponse, ArtworkResponse } from '../types'
 import ArtworkCard from './ArtworkCard'
 
@@ -11,6 +12,7 @@ const UserProfile = () => {
   const [artworks, setArtworks] = useState<ArtworkResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [isFollowing, setIsFollowing] = useState(false)
+  const { userId: currentUserId } = useAuthStore()
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -99,12 +101,26 @@ const UserProfile = () => {
           </div>
 
           <div className="profile-actions mt-8">
-            <button 
-              onClick={handleFollow}
-              className={`primary-button follow-button ${isFollowing ? 'following' : ''}`}
-            >
-              {isFollowing ? '팔로잉 ✅' : '팔로우'}
-            </button>
+            {currentUserId && id !== currentUserId && (
+              <button 
+                onClick={handleFollow}
+                className={`primary-button follow-button ${isFollowing ? 'following' : ''}`}
+              >
+                {isFollowing ? '팔로잉 ✅' : '팔로우'}
+              </button>
+            )}
+            {!currentUserId && (
+               <button 
+                onClick={() => {
+                  if (confirm('팔로우하려면 로그인이 필요합니다. 로그인 페이지로 이동할까요?')) {
+                    window.location.href = '/login';
+                  }
+                }}
+                className="primary-button follow-button"
+              >
+                팔로우
+              </button>
+            )}
           </div>
         </div>
       </header>

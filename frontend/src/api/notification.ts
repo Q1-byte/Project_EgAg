@@ -9,3 +9,8 @@ export const getNotifications = async (): Promise<NotificationResponse[]> => {
 export const markNotificationsAsRead = async (): Promise<void> => {
   await client.post('/notifications/read-all')
 }
+
+export const getUnreadCount = async (): Promise<number> => {
+  const response = await client.get<number>('/notifications/unread-count')
+  return response.data
+}

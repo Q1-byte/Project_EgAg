@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
 import { getNotifications, markNotificationsAsRead } from '../api/notification'
 import type { NotificationResponse } from '../types'
-import { Link } from 'react-router-dom'
 
 const Notifications = () => {
+  const navigate = useNavigate()
   const [notifications, setNotifications] = useState<NotificationResponse[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -43,18 +44,24 @@ const Notifications = () => {
           <div key={n.id} className={`notification-item ${n.isRead ? 'read' : 'unread'}`}>
             <div className="actor-avatar">
               {n.actorProfileImage ? (
-                <img src={n.actorProfileImage} alt={n.actorNickname} />
+                <img src={n.actorProfileImage} alt={n.actorNickname} style={{ cursor: 'pointer' }} onClick={() => navigate(`/profile/${n.actorId}`)} />
               ) : (
-                <div className="avatar-placeholder-sm">{n.actorNickname[0].toUpperCase()}</div>
+                <div className="avatar-placeholder-sm" style={{ cursor: 'pointer' }} onClick={() => navigate(`/profile/${n.actorId}`)}>{n.actorNickname[0].toUpperCase()}</div>
               )}
             </div>
             <div className="notification-content">
               <p>
-                <span className="actor-name">{n.actorNickname}</span>
+                <Link to={`/profile/${n.actorId}`} className="actor-name" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 800 }}>{n.actorNickname}</Link>
                 {n.type === 'LIKE' ? (
-                   <>님이 나의 그림 <Link to={`/artwork/${n.artworkId}`} className="artwork-link">"{n.artworkTitle}"</Link>을 좋아해요! ❤️</>
-                ) : (
+                   <>님이 나의 그림 <Link to={`/artwork/${n.artworkId}`} className="artwork-link" style={{ fontWeight: 700, color: '#333' }}>"{n.artworkTitle}"</Link>을 좋아해요! ❤️</>
+                ) : n.type === 'FOLLOW' ? (
                    <>님이 나를 팔로우하기 시작했어요! ✨</>
+                ) : n.type === 'FINISHED' ? (
+                   <>내가 참여한 그림 <Link to={`/artwork/${n.artworkId}`} className="artwork-link" style={{ fontWeight: 700, color: '#333' }}>"{n.artworkTitle}"</Link>이 완성되었어요! 🎨</>
+                ) : n.type === 'TOKEN' ? (
+                   <>새로운 토큰 보상을 획득했어요! 🎟️</>
+                ) : (
+                   <>새로운 알림이 도착했습니다!</>
                 )}
               </p>
               <span className="notification-time">

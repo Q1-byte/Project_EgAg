@@ -35,6 +35,14 @@
   --gradient-candy: linear-gradient(135deg, #FFD6E8 0%, #A5D8FF 100%);
   --gradient-blue: linear-gradient(135deg, #A5D8FF 0%, #74C0FC 100%);
   --gradient-pink: linear-gradient(135deg, #FFD6E8 0%, #FF85B3 100%);
+  
+  /* Cotton Candy Mesh Gradient Tokens */
+  --mesh-candy: 
+    radial-gradient(at 0% 0%, #FFD6E8 0%, transparent 50%),
+    radial-gradient(at 100% 0%, #A5D8FF 0%, transparent 50%),
+    radial-gradient(at 0% 100%, #FFF3BF 0%, transparent 50%),
+    radial-gradient(at 100% 100%, #D3F9D8 0%, transparent 50%),
+    #fff;
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
@@ -126,9 +134,10 @@ code {
   text-align: left;
 }
 
-.explore-page { background: linear-gradient(180deg, var(--team-pink) 0%, var(--team-beige) 40%); }
-.user-profile-page { background: linear-gradient(180deg, #fff 0%, var(--team-beige) 100%); }
-.gallery-page { background: radial-gradient(circle at top right, var(--team-pink) 0%, var(--team-beige) 50%); }
+.explore-page { background: var(--mesh-candy); min-height: 100vh; }
+.user-profile-page { background: var(--mesh-candy); min-height: 100vh; }
+.gallery-page { background: var(--mesh-candy); min-height: 100vh; }
+.detail-page-wrapper { background: var(--mesh-candy); min-height: 100vh; }
 
 .premium-hero {
   text-align: center;

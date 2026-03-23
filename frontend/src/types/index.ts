@@ -19,6 +19,7 @@ export interface ArtworkResponse {
   isPublic: boolean
   likeCount: number
   isLiked?: boolean
+  isFollowing?: boolean
   turnCount: number
   createdAt: string
   completedAt: string | null
@@ -48,7 +49,7 @@ export interface AuthResponse {
 
 export interface NotificationResponse {
   id: string
-  type: 'LIKE' | 'FOLLOW'
+  type: 'LIKE' | 'FOLLOW' | 'FINISHED' | 'TOKEN'
   actorId: string
   actorNickname: string
   actorProfileImage: string | null

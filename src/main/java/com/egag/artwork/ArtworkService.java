@@ -12,6 +12,7 @@ import com.egag.common.exception.CustomException;
 import com.egag.notification.NotificationRepository;
 import com.egag.notification.NotificationService;
 import com.egag.user.ArtworkSummary;
+import com.egag.user.FollowRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,7 @@ public class ArtworkService {
     private final ReportRepository reportRepository;
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final FollowRepository followRepository;
     private final NotificationService notificationService;
 
     // ── 내 갤러리에 저장 (email 기반) ──────────────────────────
@@ -180,8 +182,10 @@ public class ArtworkService {
 
     private ArtworkResponse convertToResponse(Artwork artwork, String currentUserId) {
         boolean isLiked = false;
+        boolean isFollowing = false;
         if (currentUserId != null) {
             isLiked = likeRepository.existsByUserIdAndArtworkId(currentUserId, artwork.getId());
+            isFollowing = followRepository.existsByFollowerIdAndFollowingId(currentUserId, artwork.getUser().getId());
         }
 
         return ArtworkResponse.builder()
@@ -199,6 +203,7 @@ public class ArtworkService {
                 .createdAt(artwork.getCreatedAt())
                 .completedAt(artwork.getCompletedAt())
                 .isLiked(isLiked)
+                .isFollowing(isFollowing)
                 .build();
     }
 

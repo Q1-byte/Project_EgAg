@@ -2,7 +2,8 @@ import { useRef, useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { consumeToken } from '../api/canvas'
 import { useAuthStore } from '../stores/useAuthStore'
-import { Ticket } from 'lucide-react'
+import { Ticket, Bell } from 'lucide-react'
+import { getUnreadCount } from '../api/notification'
 
 interface HeaderProps {
   hideOnScroll?: boolean
@@ -21,6 +22,7 @@ export default function Header({ hideOnScroll = false }: HeaderProps) {
   const { isAuthenticated, nickname, tokenBalance, setTokenBalance, logout, profileImageUrl, role } = useAuthStore()
   const [visible, setVisible] = useState(true)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
   const [showDrawMenu, setShowDrawMenu] = useState(false)
   const [showTokenModal, setShowTokenModal] = useState<'canvas' | 'deco' | 'time' | null>(null)
   const profileRef = useRef<HTMLDivElement>(null)
@@ -39,6 +41,24 @@ export default function Header({ hideOnScroll = false }: HeaderProps) {
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [hideOnScroll])
+
+  // 알림 개수 주기적 확인 (1분)
+  useEffect(() => {
+    if (!isAuthenticated) return
+    
+    const fetchCount = async () => {
+      try {
+        const count = await getUnreadCount()
+        setUnreadCount(count)
+      } catch (err) {
+        console.error('Failed to fetch unread count:', err)
+      }
+    }
+
+    fetchCount()
+    const interval = setInterval(fetchCount, 60000)
+    return () => clearInterval(interval)
+  }, [isAuthenticated])
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -233,6 +253,42 @@ export default function Header({ hideOnScroll = false }: HeaderProps) {
                 <Ticket size={13} style={{ marginRight: 4, verticalAlign: 'middle' }} />{tokenBalance}개
               </span>
 
+              {/* 알림 종 아이콘 */}
+              <div 
+                onClick={() => navigate('/notifications')}
+                style={{
+                  position: 'relative',
+                  width: 36, height: 36,
+                  borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: unreadCount > 0 ? '#ff5c8d' : '#6B82A0',
+                  background: unreadCount > 0 ? 'rgba(255, 92, 141, 0.1)' : 'rgba(107, 130, 160, 0.08)',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = unreadCount > 0 ? 'rgba(255, 92, 141, 0.15)' : 'rgba(107, 130, 160, 0.12)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = unreadCount > 0 ? 'rgba(255, 92, 141, 0.1)' : 'rgba(107, 130, 160, 0.08)' }}
+              >
+                <Bell size={20} fill={unreadCount > 0 ? '#ff5c8d' : 'transparent'} strokeWidth={2.2} />
+                {unreadCount > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: 2, right: 2,
+                    minWidth: 16, height: 16,
+                    borderRadius: 8,
+                    background: '#ff4d4f',
+                    color: 'white',
+                    fontSize: 10,
+                    fontWeight: 900,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    border: '2px solid white',
+                    padding: '0 2px'
+                  }}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </div>
+
               {/* 프로필 아바타 + 드롭다운 */}
               <div ref={profileRef} style={{ position: 'relative' }}>
                 <div
@@ -282,6 +338,7 @@ export default function Header({ hideOnScroll = false }: HeaderProps) {
                   </div>
                   {[
                     { label: '마이페이지', onClick: () => { setShowProfileMenu(false); navigate('/mypage') } },
+                    { label: '알림', onClick: () => { setShowProfileMenu(false); navigate('/notifications') } },
                     ...(role === 'ADMIN' ? [{ label: '관리자 페이지', onClick: () => { setShowProfileMenu(false); navigate('/admin') } }] : []),
                     { label: '로그아웃', onClick: () => { setShowProfileMenu(false); handleLogout() }, danger: true },
                   ].map(({ label, onClick, danger }) => (

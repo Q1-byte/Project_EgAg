@@ -27,4 +27,5 @@ public class ArtworkResponse {
     private LocalDateTime createdAt;
     private LocalDateTime completedAt;
     private boolean isLiked;
+    private boolean isFollowing;
 }
