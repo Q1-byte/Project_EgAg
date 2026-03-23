@@ -11,6 +11,18 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({})
   const [loading, setLoading] = useState(false)
+  const [failCount, setFailCount] = useState(0)
+  const [robotChecked, setRobotChecked] = useState(false)
+  const [robotChecking, setRobotChecking] = useState(false)
+
+  const handleRobotCheck = () => {
+    if (robotChecked || robotChecking) return
+    setRobotChecking(true)
+    setTimeout(() => {
+      setRobotChecking(false)
+      setRobotChecked(true)
+    }, 1200)
+  }
 
   const validate = () => {
     const e: typeof errors = {}
@@ -61,6 +73,10 @@ export default function Login() {
       const code = error.response?.data?.error?.code;
       const status = error.response?.status;
 
+      setFailCount(c => c + 1)
+      setRobotChecked(false)
+      setRobotChecking(false)
+
       if (status === 401 || code === 'INVALID_CREDENTIALS') {
         setErrors({ general: '이메일 또는 비밀번호가 올바르지 않습니다.' });
       } else if (code === 'USER_SUSPENDED') {
@@ -68,7 +84,7 @@ export default function Login() {
       } else if (status === 429) {
         setErrors({ general: '로그인 시도가 너무 많습니다. 잠시 후 다시 시도해주세요.' });
       } else {
-        setErrors({ general: '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' });
+        setErrors({ general: '아이디 또는 비밀번호가 틀립니다. 잠시 후 다시 시도해주세요.' });
       }
     } finally {
       setLoading(false);
@@ -80,7 +96,7 @@ export default function Login() {
       <div style={s.card}>
         {/* 로고 */}
         <div style={s.logo} onClick={() => navigate('/')}>
-          <img src="/Egag_logo-removebg.png" alt="EgAg" style={{ height: 48 }} />
+          <img src="/Egag_logo-removebg.png" alt="EgAg" style={{ height: 120 }} />
         </div>
 
         <h1 style={s.title}>로그인</h1>
@@ -120,8 +136,93 @@ export default function Login() {
             {errors.password && <span style={s.fieldError}>{errors.password}</span>}
           </div>
 
-          <button style={{ ...s.btnEmail, opacity: loading ? 0.7 : 1 }} type="submit" disabled={loading}>
-            {loading ? '로그인 중...' : '메일 주소로 로그인하기'}
+          {/* reCAPTCHA - 1회 실패 후 표시 */}
+          {failCount >= 1 && (
+            <>
+              <style>{`
+                @keyframes rc-spin1 { 0%{stroke-dashoffset:80} 50%{stroke-dashoffset:20} 100%{stroke-dashoffset:80} }
+                @keyframes rc-rotate { to { transform: rotate(360deg) } }
+                @keyframes rc-ripple { 0%{transform:scale(0);opacity:0.4} 100%{transform:scale(2.5);opacity:0} }
+                @keyframes rc-check { 0%{stroke-dashoffset:30} 100%{stroke-dashoffset:0} }
+              `}</style>
+              <div style={{
+                border: '1px solid #d3d3d3', borderRadius: 3,
+                background: '#f9f9f9',
+                boxShadow: '0 0 4px 1px rgba(0,0,0,0.08)',
+                overflow: 'hidden',
+                userSelect: 'none' as const,
+              }}>
+                {/* 메인 영역 */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px 0 12px', height: 74 }}>
+                  {/* 왼쪽: 체크박스 + 텍스트 */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                    {/* 체크박스 */}
+                    <div
+                      onClick={handleRobotCheck}
+                      style={{ position: 'relative', width: 28, height: 28, cursor: robotChecked ? 'default' : 'pointer', flexShrink: 0 }}
+                    >
+                      {/* ripple */}
+                      {robotChecking && (
+                        <div style={{
+                          position: 'absolute', inset: 0, borderRadius: '50%',
+                          background: 'rgba(0,0,0,0.1)',
+                          animation: 'rc-ripple 0.8s ease-out forwards',
+                        }} />
+                      )}
+                      {/* 박스 */}
+                      <div style={{
+                        width: 28, height: 28, borderRadius: 2,
+                        border: robotChecked ? 'none' : '2px solid #c1c1c1',
+                        background: '#fff',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxSizing: 'border-box' as const,
+                      }}>
+                        {robotChecking && (
+                          <svg width="22" height="22" viewBox="0 0 22 22"
+                            style={{ animation: 'rc-rotate 1s linear infinite', transformOrigin: '50% 50%' }}>
+                            <circle cx="11" cy="11" r="9" fill="none" stroke="#e0e0e0" strokeWidth="2.5"/>
+                            <circle cx="11" cy="11" r="9" fill="none" stroke="#4a90d9" strokeWidth="2.5"
+                              strokeDasharray="56" strokeDashoffset="40" strokeLinecap="round"/>
+                          </svg>
+                        )}
+                        {robotChecked && (
+                          <svg width="28" height="28" viewBox="0 0 28 28">
+                            <path d="M5 14l6 6L23 8"
+                              stroke="#009900" strokeWidth="3"
+                              strokeLinecap="round" strokeLinejoin="round" fill="none"
+                              strokeDasharray="30" strokeDashoffset="0"
+                              style={{ animation: 'rc-check 0.25s ease both' }}
+                            />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 14, color: '#333', fontWeight: 400 }}>로봇이 아닙니다.</span>
+                  </div>
+
+                  {/* 오른쪽: 브랜딩 */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                    {/* 실제 reCAPTCHA 로고 */}
+                    <svg width="38" height="38" viewBox="0 0 64 64">
+                      <path d="M32 8 A24 24 0 1 1 11.2 44" fill="none" stroke="#4a90d9" strokeWidth="6" strokeLinecap="round"/>
+                      <path d="M8 38 l4 8 l8 -4" fill="none" stroke="#4a90d9" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <circle cx="32" cy="32" r="8" fill="#4a90d9"/>
+                      <circle cx="32" cy="32" r="4" fill="#fff"/>
+                    </svg>
+                    <span style={{ fontSize: 8, color: '#555', fontWeight: 700, letterSpacing: 0.5 }}>reCAPTCHA</span>
+                    <span style={{ fontSize: 7, color: '#999', letterSpacing: 0.2 }}>Privacy · Terms</span>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          <button
+            style={{ ...s.btnEmail, opacity: (loading || (failCount >= 1 && !robotChecked)) ? 0.5 : 1, cursor: (failCount >= 1 && !robotChecked) ? 'not-allowed' : 'pointer' }}
+            type="submit"
+            disabled={loading || (failCount >= 1 && !robotChecked)}
+          >
+            {loading ? '로그인 중...' : '로그인하기'}
           </button>
         </form>
 
@@ -159,22 +260,23 @@ const s: Record<string, React.CSSProperties> = {
     padding: '24px 16px',
   },
   card: {
-    background: '#fff', borderRadius: 24, padding: '44px 48px',
+    background: '#fff', borderRadius: 24, padding: '22px 48px',
     boxShadow: '0 8px 32px rgba(59,130,246,0.10)',
     width: '100%', maxWidth: 440,
     display: 'flex', flexDirection: 'column', alignItems: 'center',
   },
   logo: {
-    display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 28,
+    display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 14,
   },
   logoIcon: { fontSize: 24 },
   logoText: { fontSize: 20, fontWeight: 700, color: '#1D4ED8', letterSpacing: -0.5 },
   title: {
     fontSize: 24, fontWeight: 800, color: '#0F172A',
     margin: '0 0 24px', textAlign: 'center', width: '100%',
+    letterSpacing: 1.5,
   },
   errorBanner: {
-    width: '100%', background: '#FEF2F2', border: '1px solid #FECACA',
+    width: '100%', boxSizing: 'border-box' as const, background: '#FEF2F2', border: '1px solid #FECACA',
     borderRadius: 10, padding: '12px 16px', fontSize: 14, color: '#DC2626',
     marginBottom: 16,
   },

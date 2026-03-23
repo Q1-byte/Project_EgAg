@@ -393,9 +393,9 @@ export default function TokenShop() {
         </div>
 
         {/* ── 커버플로우 캐러셀 ── */}
-        <div style={{ width: '100%', maxWidth: 800, marginBottom: 56, position: 'relative', marginTop: -80 }}>
+        <div style={{ width: '100%', maxWidth: 800, marginBottom: 64, position: 'relative', marginTop: -70 }}>
           {/* 카드 무대 */}
-          <div style={{ position: 'relative', height: 380, perspective: '1000px', perspectiveOrigin: '50% 50%' }}>
+          <div style={{ position: 'relative', height: 420, perspective: '1000px', perspectiveOrigin: '50% 50%' }}>
             {packages.map((pkg, i) => {
               const meta = PKG_META[pkg.id] ?? PKG_META.BASIC
               const len = packages.length
@@ -426,13 +426,13 @@ export default function TokenShop() {
                     opacity,
                     zIndex,
                     cursor: offset === 0 ? 'default' : 'pointer',
-                    background: meta.gradient,
                     borderRadius: 28,
-                    padding: '40px 28px 32px',
+                    padding: 0,
                     display: 'flex',
                     flexDirection: 'column',
-                    alignItems: 'center',
+                    alignItems: 'stretch',
                     gap: 0,
+                    overflow: 'visible',
                     border: offset === 0 ? `2px solid ${meta.accent}` : '1.5px solid rgba(255,255,255,0.7)',
                     boxShadow: offset === 0 ? `0 20px 50px ${meta.glow}` : '0 4px 16px rgba(0,0,0,0.07)',
                   }}
@@ -440,43 +440,76 @@ export default function TokenShop() {
                   {/* shine on active */}
                   {offset === 0 && <div className="shine-layer" />}
 
-                  {/* 할인율 */}
+                  {/* 할인율 - 금색 그라디언트, 카드 모서리 바깥 */}
                   {pkg.id !== 'BASIC' && (
                     <div style={{
-                      position: 'absolute', top: -12, right: -12,
-                      width: 62, height: 62, borderRadius: '50%',
-                      background: `linear-gradient(135deg, ${meta.accent} 0%, ${meta.badgeColor}bb 100%)`,
-                      boxShadow: `0 4px 16px ${meta.glow}, 0 0 0 3px #fff`,
+                      position: 'absolute', top: -18, right: -18,
+                      width: 60, height: 60, borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #FFE566 0%, #F5A623 55%, #C97B0A 100%)',
+                      boxShadow: '0 4px 18px rgba(210,150,0,0.6), 0 0 0 3px #fff',
                       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                       transform: 'rotate(12deg)',
-                      zIndex: 20,
+                      zIndex: 30,
                     }}>
-                      <span style={{ fontSize: 18, fontWeight: 900, color: '#fff', lineHeight: 1, letterSpacing: -0.5 }}>
+                      <span style={{ fontSize: 14, fontWeight: 900, color: '#6b3a00', lineHeight: 1, letterSpacing: -0.5 }}>
                         {pkg.id === 'STANDARD' ? '5%' : pkg.id === 'PREMIUM' ? '15%' : '20%'}
                       </span>
-                      <span style={{ fontSize: 8, fontWeight: 800, color: 'rgba(255,255,255,0.85)', letterSpacing: 1 }}>SAVE</span>
+                      <span style={{ fontSize: 7.5, fontWeight: 900, color: '#8b5000', letterSpacing: 0.5 }}>SAVE</span>
                     </div>
                   )}
 
-                  {/* 배지 */}
-                  {meta.badge && (
-                    <div style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', background: meta.badgeColor, color: '#fff', fontSize: 11, fontWeight: 800, borderRadius: 100, padding: '5px 16px', whiteSpace: 'nowrap', letterSpacing: 0.5 }}>
-                      {meta.badge}
-                    </div>
-                  )}
-
-                  <h3 style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 900, color: '#1a1a2e' }}>{pkg.displayName}</h3>
-
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 18 }}>
-                    <span style={{ fontSize: 52, fontWeight: 900, color: meta.accent, lineHeight: 1, letterSpacing: -2 }}>{pkg.tokenAmount}</span>
-                    <span style={{ fontSize: 17, fontWeight: 700, color: meta.textColor }}>개</span>
+                  {/* 이미지 영역 */}
+                  <div style={{
+                    background: meta.gradient,
+                    borderRadius: '26px 26px 0 0',
+                    overflow: 'hidden',
+                    padding: '14px',
+                  }}>
+                    <img
+                      src="/token/token.png"
+                      alt="token"
+                      style={{ width: '100%', display: 'block', objectFit: 'contain', filter: `drop-shadow(0 8px 24px ${meta.glow})` }}
+                    />
                   </div>
 
-                  <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 14, padding: '12px 24px', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>
-                    <div style={{ fontSize: 26, fontWeight: 900, color: '#1a1a2e', letterSpacing: -0.5 }}>
-                      {pkg.price.toLocaleString()}<span style={{ fontSize: 14, fontWeight: 600, marginLeft: 2 }}>원</span>
+                  {/* 정보 영역 */}
+                  <div style={{
+                    position: 'relative',
+                    background: 'rgba(255,255,255,0.92)',
+                    borderTop: `1.5px solid ${meta.accent}25`,
+                    borderRadius: '0 0 26px 26px',
+                    padding: '24px 22px 10px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 4,
+                  }}>
+                    {/* 배지 - 이미지/정보칸 경계 가운데 */}
+                    {meta.badge && (
+                      <div style={{
+                        position: 'absolute', top: 0, left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        background: meta.badgeColor, color: '#fff',
+                        fontSize: 10, fontWeight: 800, borderRadius: 100,
+                        padding: '4px 14px', whiteSpace: 'nowrap', letterSpacing: 0.5,
+                        zIndex: 10,
+                        boxShadow: `0 2px 8px ${meta.glow}`,
+                      }}>
+                        {meta.badge}
+                      </div>
+                    )}
+                    <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#1a1a2e' }}>{pkg.displayName}</h3>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
+                      <span style={{ fontSize: 44, fontWeight: 900, color: meta.accent, lineHeight: 1, letterSpacing: -2 }}>{pkg.tokenAmount}</span>
+                      <span style={{ fontSize: 16, fontWeight: 700, color: meta.textColor }}>개</span>
                     </div>
-                    <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>개당 {Math.round(pkg.price / pkg.tokenAmount)}원</div>
+                    <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 12, padding: '10px 20px', textAlign: 'center', width: '100%', boxSizing: 'border-box', borderTop: `1px solid ${meta.accent}20` }}>
+                      <div style={{ fontSize: 22, fontWeight: 900, color: '#1a1a2e', letterSpacing: -0.5 }}>
+                        {pkg.price.toLocaleString()}<span style={{ fontSize: 13, fontWeight: 600, marginLeft: 2 }}>원</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>개당 {Math.round(pkg.price / pkg.tokenAmount)}원</div>
+                    </div>
                   </div>
                 </div>
               )
@@ -494,7 +527,7 @@ export default function TokenShop() {
           </button>
 
           {/* 도트 */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 20, marginBottom: 8 }}>
             {packages.map((_, i) => (
               <div key={i} onClick={() => { goTo(i) }} style={{ width: i === activeIndex ? 24 : 8, height: 8, borderRadius: 4, background: i === activeIndex ? (PKG_META[packages[i]?.id]?.accent ?? '#7c3aed') : 'rgba(0,0,0,0.15)', transition: 'all 0.35s', cursor: 'pointer' }} />
             ))}
