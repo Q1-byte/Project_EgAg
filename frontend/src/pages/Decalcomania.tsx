@@ -126,6 +126,20 @@ export default function Decalcomania() {
     }
   }
 
+  const [topicRefreshing, setTopicRefreshing] = useState(false)
+  const handleRefreshTopic = async () => {
+    if (topicRefreshing) return
+    setTopicRefreshing(true)
+    try {
+      const res = await startSession(authNickname ?? 'guest')
+      setTopic(res.topic)
+    } catch {
+      alert('제시어를 불러오지 못했습니다.')
+    } finally {
+      setTopicRefreshing(false)
+    }
+  }
+
   // ─── 드로잉 이벤트 ───────────────────────────────────
   const half = stageSize.width / 2
 
@@ -416,8 +430,23 @@ export default function Decalcomania() {
 
           {/* 토픽 + 힌트 */}
           {topic && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)', border: '1px solid rgba(186,230,255,0.7)', borderRadius: 20, padding: '6px 14px', fontSize: 13, color: '#0369a1', fontWeight: 700, flexShrink: 0 }}>
-              <Palette size={13} />{topic}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)', border: '1px solid rgba(186,230,255,0.7)', borderRadius: 20, padding: '6px 14px', fontSize: 13, color: '#0369a1', fontWeight: 700 }}>
+                <Palette size={13} />{topic}
+              </div>
+              <button
+                onClick={handleRefreshTopic}
+                disabled={topicRefreshing}
+                title="제시어 새로고침"
+                style={{ width: 30, height: 30, borderRadius: '50%', border: '1.5px solid rgba(186,230,255,0.7)', background: 'white', cursor: topicRefreshing ? 'default' : 'pointer', color: '#0369a1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'transform 0.3s' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                  style={{ transform: topicRefreshing ? 'rotate(360deg)' : 'none', transition: 'transform 0.5s linear' }}>
+                  <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                  <path d="M21 3v5h-5" />
+                  <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                  <path d="M3 21v-5h5" />
+                </svg>
+              </button>
             </div>
           )}
           {canDraw && (

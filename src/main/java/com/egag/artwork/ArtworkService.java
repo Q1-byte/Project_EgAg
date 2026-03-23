@@ -9,6 +9,7 @@ import com.egag.common.domain.ArtworkRepository;
 import com.egag.common.domain.User;
 import com.egag.common.domain.UserRepository;
 import com.egag.common.exception.CustomException;
+import com.egag.notification.NotificationRepository;
 import com.egag.notification.NotificationService;
 import com.egag.user.ArtworkSummary;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,6 +35,7 @@ public class ArtworkService {
     private final ArtworkRepository artworkRepository;
     private final LikeRepository likeRepository;
     private final ReportRepository reportRepository;
+    private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
 
@@ -37,16 +45,18 @@ public class ArtworkService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(HttpStatus.UNAUTHORIZED, "USER_NOT_FOUND", "사용자를 찾을 수 없습니다."));
 
+        String savedImageUrl = downloadAndSave(req.getImageUrl());
+
         Artwork artwork = Artwork.builder()
                 .id(UUID.randomUUID().toString())
                 .user(user)
                 .title(req.getTitle())
                 .topic(req.getSource())
-                .imageUrl(req.getImageUrl())
+                .imageUrl(savedImageUrl)
                 .userImageData(req.getUserImageData())
                 .strokeData("{}")
                 .status("completed")
-                .isPublic(false)
+                .isPublic(true)
                 .build();
 
         return new ArtworkSummary(artworkRepository.save(artwork));
@@ -79,7 +89,27 @@ public class ArtworkService {
             throw new CustomException(HttpStatus.FORBIDDEN, "PERMISSION_DENIED", "삭제 권한이 없습니다.");
         }
 
+        likeRepository.deleteByArtworkId(artworkId);
+        reportRepository.deleteByArtworkId(artworkId);
+        notificationRepository.deleteByArtworkId(artworkId);
         artworkRepository.delete(artwork);
+    }
+
+    private String downloadAndSave(String imageUrl) {
+        if (imageUrl == null || !imageUrl.startsWith("http")) return imageUrl;
+        try {
+            Path dir = Paths.get("uploads/artworks");
+            Files.createDirectories(dir);
+            String filename = UUID.randomUUID() + ".png";
+            Path dest = dir.resolve(filename);
+            try (InputStream in = new URL(imageUrl).openStream()) {
+                Files.copy(in, dest, StandardCopyOption.REPLACE_EXISTING);
+            }
+            return "/uploads/artworks/" + filename;
+        } catch (Exception e) {
+            System.err.println("[downloadAndSave] 실패: " + e.getMessage());
+            return imageUrl;
+        }
     }
 
     // ── 공개/비공개 토글 (userId 기반, void) ───────────────────

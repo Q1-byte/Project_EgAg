@@ -3,6 +3,92 @@ import { useEffect, useRef, useState, useMemo } from 'react'
 import { useAuthStore } from '../stores/useAuthStore'
 import { Pencil, Layers, Ticket, Sparkles, Timer, ArrowRight, MessageCircle, ChevronUp } from 'lucide-react'
 import Header from '../components/Header'
+import { exploreArtworks } from '../api/artwork'
+import type { ArtworkResponse } from '../types'
+
+function ArtworkCarousel() {
+  const navigate = useNavigate()
+  const [artworks, setArtworks] = useState<ArtworkResponse[]>([])
+  const ringRef = useRef<HTMLDivElement>(null)
+  const angleRef = useRef(0)
+  const rafRef = useRef<number>()
+  const pausedRef = useRef(false)
+
+  useEffect(() => {
+    exploreArtworks('latest', undefined, 50)
+      .then(data => setArtworks(data.filter(a => a.imageUrl).slice(0, 10)))
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (artworks.length === 0) return
+    const n = artworks.length
+    const radius = 380
+
+    const animate = () => {
+      angleRef.current += 0.18
+
+      if (ringRef.current) {
+        ringRef.current.style.transform =
+          `rotateX(-5deg) rotateZ(8deg) rotateY(${angleRef.current}deg)`
+      }
+
+      rafRef.current = requestAnimationFrame(animate)
+    }
+    rafRef.current = requestAnimationFrame(animate)
+    return () => cancelAnimationFrame(rafRef.current!)
+  }, [artworks.length])
+
+  if (artworks.length === 0) return null
+
+  const n = artworks.length
+  const radius = 380
+  const cardW = 230
+  const cardH = 300
+
+  return (
+    <div
+      style={{ position: 'relative', zIndex: 2, width: '100%', height: 480, perspective: '2500px' }}
+    >
+      <div style={{ position: 'absolute', top: '50%', left: '50%', width: 0, height: 0, transformStyle: 'preserve-3d' }}>
+        <div ref={ringRef} style={{ transformStyle: 'preserve-3d' }}>
+          {artworks.map((art, i) => {
+            const theta = (i / n) * 2 * Math.PI
+            const x = radius * Math.cos(theta)
+            const z = radius * Math.sin(theta)
+            const cardAngleDeg = (theta * 180) / Math.PI
+            return (
+              <div
+                key={art.id}
+                onClick={() => navigate(`/artwork/${art.id}`)}
+                style={{
+                  position: 'absolute',
+                  width: cardW,
+                  height: cardH,
+                  marginLeft: -cardW / 2,
+                  marginTop: -cardH / 2,
+                  transform: `translateX(${x}px) translateZ(${z}px) rotateY(${-cardAngleDeg}deg)`,
+                  borderRadius: 20,
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+                  opacity: 1,
+                }}
+              >
+                <img
+                  src={art.imageUrl!}
+                  alt={art.title ?? ''}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none' }}
+                />
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+    </div>
+  )
+}
 
 function SparkleStars() {
   const stars = useMemo(() => {
@@ -104,6 +190,27 @@ export default function Home() {
         @keyframes blob1 { 0%{transform:translateY(0px)} 50%{transform:translateY(-80px)} 100%{transform:translateY(0px)} }
         @keyframes blob2 { 0%{transform:translateY(0px)} 50%{transform:translateY(80px)} 100%{transform:translateY(0px)} }
         @keyframes blob3 { 0%{transform:translateY(0px)} 50%{transform:translateY(-60px)} 100%{transform:translateY(0px)} }
+        @keyframes smoke1 {
+          0%   { transform:translate(0,0) scale(1);      border-radius:42% 58% 70% 30%/45% 45% 55% 55%; opacity:0.22; }
+          20%  { transform:translate(28px,-35px) scale(1.07); border-radius:60% 40% 30% 70%/60% 30% 70% 40%; opacity:0.28; }
+          40%  { transform:translate(-18px,50px) scale(0.94); border-radius:30% 70% 60% 40%/50% 65% 30% 60%; opacity:0.18; }
+          65%  { transform:translate(45px,15px) scale(1.05); border-radius:55% 45% 65% 35%/35% 65% 35% 65%; opacity:0.25; }
+          80%  { transform:translate(-30px,-20px) scale(0.98); border-radius:48% 52% 40% 60%/60% 40% 55% 45%; opacity:0.20; }
+          100% { transform:translate(0,0) scale(1);      border-radius:42% 58% 70% 30%/45% 45% 55% 55%; opacity:0.22; }
+        }
+        @keyframes smoke2 {
+          0%   { transform:translate(0,0) scale(1);      border-radius:58% 42% 45% 55%/60% 40% 60% 40%; opacity:0.18; }
+          30%  { transform:translate(-40px,30px) scale(1.1);  border-radius:40% 60% 70% 30%/45% 55% 45% 55%; opacity:0.24; }
+          60%  { transform:translate(35px,-45px) scale(0.92); border-radius:65% 35% 55% 45%/30% 70% 40% 60%; opacity:0.15; }
+          100% { transform:translate(0,0) scale(1);      border-radius:58% 42% 45% 55%/60% 40% 60% 40%; opacity:0.18; }
+        }
+        @keyframes smoke3 {
+          0%   { transform:translate(0,0) scale(1);      border-radius:70% 30% 50% 50%/40% 60% 40% 60%; opacity:0.15; }
+          25%  { transform:translate(50px,25px) scale(1.06); border-radius:35% 65% 40% 60%/55% 45% 65% 35%; opacity:0.20; }
+          50%  { transform:translate(-25px,-50px) scale(0.96); border-radius:55% 45% 70% 30%/65% 35% 50% 50%; opacity:0.12; }
+          75%  { transform:translate(-45px,35px) scale(1.03); border-radius:45% 55% 35% 65%/40% 60% 55% 45%; opacity:0.18; }
+          100% { transform:translate(0,0) scale(1);      border-radius:70% 30% 50% 50%/40% 60% 40% 60%; opacity:0.15; }
+        }
         @keyframes scrollDot { 0%{transform:translateY(0);opacity:1} 80%{transform:translateY(14px);opacity:0} 100%{transform:translateY(0);opacity:0} }
         .scroll-dot { width:3px; height:5px; border-radius:2px; background:rgba(180,168,200,0.7); animation:scrollDot 1.8s ease infinite; }
         .scroll-hint { animation: float2 3s ease-in-out infinite; }
@@ -200,68 +307,67 @@ export default function Home() {
       <Header hideOnScroll />
 
       {/* 메인 */}
-      <main style={s.main}>
-        <p style={s.eyebrow}><Sparkles size={12} style={{ marginRight: 6, verticalAlign: 'middle' }} />AI 그림 놀이터</p>
-        <h1 className="egag-main-title" style={s.mainTitle}>무엇을 그려볼까요?</h1>
-        <p className="egag-main-desc" style={s.mainDesc}>AI와 함께하는 3가지 그림 놀이, 지금 바로 시작해봐요</p>
+      <main style={{ ...s.main, position: 'relative', overflow: 'hidden' }}>
+
+        {/* SVG 연기 필터 */}
+        <svg width="0" height="0" style={{ position: 'absolute' }}>
+          <defs>
+            <filter id="smoke-filter" x="-50%" y="-50%" width="200%" height="200%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.012 0.008" numOctaves="4" seed="8" result="noise" />
+              <feDisplacementMap in="SourceGraphic" in2="noise" scale="55" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+          </defs>
+        </svg>
+
+        {/* 연기 레이어 */}
+        <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
+          {/* 핑크 연기 — 왼쪽 위 */}
+          <div style={{
+            position: 'absolute', top: '-10%', left: '-5%',
+            width: 480, height: 380,
+            background: 'radial-gradient(ellipse at 40% 50%, rgba(255,140,180,0.45) 0%, rgba(255,100,160,0.20) 40%, transparent 70%)',
+            filter: 'url(#smoke-filter) blur(18px)',
+            animation: 'smoke1 14s ease-in-out infinite',
+          }} />
+          {/* 보라 연기 — 가운데 오른쪽 */}
+          <div style={{
+            position: 'absolute', top: '15%', right: '-8%',
+            width: 420, height: 360,
+            background: 'radial-gradient(ellipse at 60% 45%, rgba(160,100,255,0.38) 0%, rgba(130,80,240,0.18) 40%, transparent 70%)',
+            filter: 'url(#smoke-filter) blur(22px)',
+            animation: 'smoke2 18s ease-in-out infinite 2s',
+          }} />
+          {/* 하늘 연기 — 아래 가운데 */}
+          <div style={{
+            position: 'absolute', bottom: '-5%', left: '25%',
+            width: 500, height: 320,
+            background: 'radial-gradient(ellipse at 50% 55%, rgba(100,180,255,0.35) 0%, rgba(80,160,255,0.15) 40%, transparent 70%)',
+            filter: 'url(#smoke-filter) blur(20px)',
+            animation: 'smoke3 22s ease-in-out infinite 1s',
+          }} />
+          {/* 노랑 연기 — 오른쪽 위 보조 */}
+          <div style={{
+            position: 'absolute', top: '5%', left: '40%',
+            width: 340, height: 280,
+            background: 'radial-gradient(ellipse at 50% 40%, rgba(255,210,80,0.30) 0%, rgba(255,190,60,0.12) 40%, transparent 70%)',
+            filter: 'url(#smoke-filter) blur(24px)',
+            animation: 'smoke1 16s ease-in-out infinite 4s',
+          }} />
+        </div>
+
+        <p style={{ ...s.eyebrow, position: 'relative', zIndex: 2 }}><Sparkles size={12} style={{ marginRight: 6, verticalAlign: 'middle' }} />AI 그림 놀이터</p>
+        <h1 className="egag-main-title" style={{ ...s.mainTitle, position: 'relative', zIndex: 2 }}>무엇을 그려볼까요?</h1>
+        <p className="egag-main-desc" style={{ ...s.mainDesc, position: 'relative', zIndex: 2 }}>AI와 함께하는 3가지 그림 놀이, 지금 바로 시작해봐요</p>
 
         {/* 스크롤 유도 */}
-        <div className="scroll-hint" style={{ margin: '4px 0 28px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+        <div className="scroll-hint" style={{ margin: '4px 0 28px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, position: 'relative', zIndex: 2 }}>
           <span style={{ fontSize: 10, letterSpacing: 4, color: '#c0b8d0', textTransform: 'uppercase', fontWeight: 700 }}>scroll</span>
           <div style={{ width: 16, height: 26, borderRadius: 8, border: '1.5px solid rgba(180,168,200,0.5)', display: 'flex', justifyContent: 'center', paddingTop: 4, boxSizing: 'border-box' }}>
             <div className="scroll-dot" />
           </div>
         </div>
 
-        <div className="egag-cards" style={s.cards}>
-          {/* EgAg 카드 */}
-          <div className="card-canvas egag-card" style={s.cardCanvas} onClick={() => isAuthenticated ? setShowTokenModal('canvas') : navigate('/login')}>
-            <div style={s.cardTop}>
-              <div style={{ ...s.cardIconWrap, background: 'rgba(255,255,255,0.45)' }}><Pencil size={28} color="#7a3a4a" /></div>
-              <span style={{ ...s.cardTag, color: '#7a3a4a', background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(196,122,138,0.3)' }}><Ticket size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />토큰 1개</span>
-            </div>
-            <h2 style={{ ...s.cardTitle, color: '#5a1e2e' }}>마법 그림판</h2>
-            <p style={{ ...s.cardDesc, color: '#7a3a4a' }}>
-              자유롭게 그리면 AI가 맞춰보고<br />동화 스타일 그림으로 변환해줘요
-            </p>
-            <button className="start-btn" style={{ ...s.cardBtn, background: '#ff5c8d' }}>
-              시작하기
-              <ArrowRight size={16} />
-            </button>
-          </div>
-
-          {/* 데칼코마니 카드 */}
-          <div className="card-deco egag-card" style={s.cardDeco} onClick={() => isAuthenticated ? setShowTokenModal('deco') : navigate('/login')}>
-            <div style={s.cardTop}>
-              <div style={{ ...s.cardIconWrap, background: 'rgba(255,255,255,0.45)' }}><Layers size={28} color="#2d5a8a" /></div>
-              <span style={{ ...s.cardTag, color: '#2d5a8a', background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(107,130,160,0.3)' }}><Ticket size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />토큰 1개</span>
-            </div>
-            <h2 style={{ ...s.cardTitle, color: '#1e3a5f' }}>거울 그림판</h2>
-            <p style={{ ...s.cardDesc, color: '#3a5a7a' }}>
-              절반만 그리면 AI 미러가<br />반대쪽을 대칭으로 완성해줘요
-            </p>
-            <button className="start-btn" style={{ ...s.cardBtn, background: '#4dabf7' }}>
-              시작하기
-              <ArrowRight size={16} />
-            </button>
-          </div>
-
-          {/* 타임어택 카드 */}
-          <div className="card-time egag-card" style={s.cardTime} onClick={() => isAuthenticated ? setShowTokenModal('time') : navigate('/login')}>
-            <div style={s.cardTop}>
-              <div style={{ ...s.cardIconWrap, background: 'rgba(255,255,255,0.45)' }}><Timer size={28} color="#7a6000" /></div>
-              <span style={{ ...s.cardTag, color: '#7a6000', background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(200,170,0,0.3)' }}><Ticket size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />토큰 1개</span>
-            </div>
-            <h2 style={{ ...s.cardTitle, color: '#5a4400' }}>시간초 그림판</h2>
-            <p style={{ ...s.cardDesc, color: '#7a6000' }}>
-              주어진 주제를 제한 시간 안에 그려봐요.<br />AI가 맞히면 성공!
-            </p>
-            <button className="start-btn" style={{ ...s.cardBtn, background: '#ffd43b', color: '#7a5500' }}>
-              시작하기
-              <ArrowRight size={16} />
-            </button>
-          </div>
-        </div>
+        <ArtworkCarousel />
 
       </main>
 
