@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { consumeToken } from '../api/canvas'
 import { useEffect, useRef, useState, useMemo } from 'react'
 import { useAuthStore } from '../stores/useAuthStore'
@@ -264,6 +264,8 @@ export default function Home() {
         @keyframes scrollDot { 0%{transform:translateY(0);opacity:1} 80%{transform:translateY(14px);opacity:0} 100%{transform:translateY(0);opacity:0} }
         .scroll-dot { width:3px; height:5px; border-radius:2px; background:rgba(180,168,200,0.7); animation:scrollDot 1.8s ease infinite; }
         .scroll-hint { animation: float2 3s ease-in-out infinite; }
+        .footer-policy-link { color: #7a6a9a; text-decoration: none; transition: color 0.2s, text-decoration 0.2s; }
+        .footer-policy-link:hover { color: #c47a8a; text-decoration: underline; }
         .card-canvas:hover { transform: translateY(-6px) scale(1.02); box-shadow: 0 20px 60px rgba(196,122,138,0.25) !important; }
         .card-deco:hover   { transform: translateY(-6px) scale(1.02); box-shadow: 0 20px 60px rgba(107,130,160,0.25) !important; }
         .card-time:hover   { transform: translateY(-6px) scale(1.02); box-shadow: 0 20px 60px rgba(212,168,0,0.25) !important; }
@@ -515,7 +517,9 @@ export default function Home() {
 
       </section>
 
-      <footer style={s.footer}>© 2025 EgAg · AI 그림판</footer>
+      <footer style={s.footer}>
+        © 2025 EgAg · AI 그림판 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <Link to="/terms" className="footer-policy-link">이용약관</Link> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <Link to="/privacy" className="footer-policy-link">개인정보처리방침</Link>
+      </footer>
 
       {/* 스크롤 상단 버튼 */}
       <button

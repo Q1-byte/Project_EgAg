@@ -18,6 +18,8 @@ import Policy from './pages/Policy'
 import TokenShop from './pages/TokenShop'
 import MyPage from './pages/MyPage'
 import TimeAttack from './pages/TimeAttack'
+import NotFound from './pages/NotFound'
+import InternalError from './pages/InternalError'
 
 // 상준 파트 페이지 컴포넌트들
 import Explore from './artwork/Explore'
@@ -29,12 +31,21 @@ import EditProfile from './artwork/EditProfile'
 
 // 어드민 컴포넌트들
 import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminUserManagement from './pages/admin/UserManagement'; // ✅ 통합 관리 페이지
-// import UserManagement from './pages/admin/UserManagement'; // 👈 삭제 (더 이상 사용 안 함)
+import AdminUserManagement from './pages/admin/UserManagement';
 import PaymentManagement from './pages/admin/PaymentManagement';
 import AdminSidebar from './pages/admin/AdminSidebar';
 import AdminImageManagement from './pages/admin/AdminImageManagement';
 import AdminInquiryManagement from './pages/admin/AdminInquiryManagement';
+
+function ScrollToTop() {
+    const { pathname } = useLocation()
+
+    useEffect(() => {
+        window.scrollTo(0, 0)
+    }, [pathname])
+
+    return null
+}
 
 // 온보딩 가드: 카카오 로그인 후 추가 정보 입력이 필요한 경우 강제 이동
 function OnboardingGuard() {
@@ -55,6 +66,7 @@ function App() {
     useTokenRefresh()
     return (
         <>
+            <ScrollToTop />
             <OnboardingGuard />
             <Routes>
                 {/* --- 일반 사용자 페이지 --- */}
@@ -99,14 +111,14 @@ function App() {
                     <Route path="dashboard" element={<AdminDashboard />} />
                     {/* ✅ 통합 유저 관리 (토큰 + 상태 변경) */}
                     <Route path="users" element={<AdminUserManagement />} />
-                    {/* ❌ path="all-users" 라우트 삭제됨 */}
                     <Route path="payments" element={<PaymentManagement />} />
                     <Route path="images" element={<AdminImageManagement />} />
                     <Route path="inquiries" element={<AdminInquiryManagement />} />
                 </Route>
 
-                {/* 404 페이지 */}
-                <Route path="*" element={<div>404 Not Found</div>} />
+                {/* 404 / 500 페이지 */}
+                <Route path="/500" element={<InternalError />} />
+                <Route path="*" element={<NotFound />} />
             </Routes>
         </>
     )
