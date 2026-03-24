@@ -67,7 +67,7 @@ const UserManagement = () => {
         }
     }, [isAuthenticated, role, accessToken, fetchData]);
 
-    // ✅ 필터링 로직 (filteredUsers 사용)
+    // ✅ 필터링 로직
     const filteredUsers = useMemo(() => {
         return allUsers.filter(u => {
             const matchesFilter =
@@ -136,53 +136,59 @@ const UserManagement = () => {
     return (
         <div style={s.container}>
             <header style={s.header}>
-                <h1 style={s.title}>👥 전체 유저 관리</h1>
-                <p style={s.meta}>유저 검색, 정지 처리 및 토큰 지급을 통합 관리합니다.</p>
+                <h1 style={s.title}>👥 통합 유저 관리</h1>
+                <p style={s.meta}>유저 검색, 정지 처리 및 토큰 지급을 통합 관리합니다. ✨</p>
             </header>
 
             {/* 🔍 토큰 지급용 상세 검색 */}
-            <div style={s.searchSection}>
-                <input
-                    type="text"
-                    placeholder="닉네임으로 유저 상세 검색 (토큰 지급용)"
-                    style={s.searchInput}
-                    value={searchKeyword}
-                    onChange={(e) => setSearchKeyword(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && void handleSearch()}
-                />
-                <button onClick={() => void handleSearch()} style={s.searchBtn}>검색</button>
-            </div>
-
-            {/* 유저 상세 카드 */}
-            {user && (
-                <div style={s.userCard}>
-                    <div style={s.userHeader}>
-                        <h2 style={s.nickname}>{user.nickname} <span style={s.emailSpan}>({user.email})</span></h2>
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                            <span style={{ ...s.statusBadge, backgroundColor: user.isSuspended ? '#EF4444' : '#10B981' }}>
-                                {user.isSuspended ? "정지됨" : "정상"}
-                            </span>
-                            <button onClick={() => void handleToggleSuspension(user)} style={{ ...s.suspendBtn, backgroundColor: user.isSuspended ? '#6366F1' : '#F43F5E' }}>
-                                {user.isSuspended ? "🔓 정지 해제" : "🚫 계정 정지"}
-                            </button>
-                        </div>
-                    </div>
-                    <div style={s.divider} />
-                    <div style={s.actionSection}>
-                        <h3 style={s.sectionSubTitle}>💰 수동 토큰 지급</h3>
-                        <div style={{display: 'flex', gap: '15px'}}>
-                            <input type="number" style={s.input} value={tokenAmount} onChange={(e) => setTokenAmount(Number(e.target.value))} />
-                            <select style={s.input} value={reason} onChange={(e) => setReason(e.target.value)}>
-                                <option>결제 오류 보상</option>
-                                <option>이벤트 당첨</option>
-                                <option>시스템 장애 보상</option>
-                                <option>기타</option>
-                            </select>
-                            <button onClick={() => void handleGiveToken()} style={s.inlineSubmitBtn}>지급하기</button>
-                        </div>
-                    </div>
+            <div style={s.searchCard}>
+                <div style={s.searchFlex}>
+                    <input
+                        type="text"
+                        placeholder="닉네임으로 유저 상세 검색 (토큰 지급/정지용)"
+                        style={s.searchInput}
+                        value={searchKeyword}
+                        onChange={(e) => setSearchKeyword(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && void handleSearch()}
+                    />
+                    <button onClick={() => void handleSearch()} style={s.searchBtn}>검색</button>
                 </div>
-            )}
+
+                {/* 유저 상세 정보 (검색 시 나타남) */}
+                {user && (
+                    <div style={s.userDetail}>
+                        <div style={s.divider} />
+                        <div style={s.userHeader}>
+                            <div style={s.userBasic}>
+                                <h2 style={s.nickname}>{user.nickname}</h2>
+                                <span style={s.emailSpan}>{user.email}</span>
+                            </div>
+                            <div style={s.badgeGroup}>
+                                <span style={{ ...s.statusBadge, backgroundColor: user.isSuspended ? '#EF4444' : '#10B981' }}>
+                                    {user.isSuspended ? "정지됨" : "정상"}
+                                </span>
+                                <button onClick={() => void handleToggleSuspension(user)} style={{ ...s.suspendBtn, backgroundColor: user.isSuspended ? '#6366F1' : '#F43F5E' }}>
+                                    {user.isSuspended ? "🔓 정지 해제" : "🚫 계정 정지"}
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div style={s.actionSection}>
+                            <h3 style={s.sectionSubTitle}>💰 수동 토큰 지급</h3>
+                            <div style={s.tokenForm}>
+                                <input type="number" style={s.input} value={tokenAmount} onChange={(e) => setTokenAmount(Number(e.target.value))} />
+                                <select style={s.input} value={reason} onChange={(e) => setReason(e.target.value)}>
+                                    <option>결제 오류 보상</option>
+                                    <option>이벤트 당첨</option>
+                                    <option>시스템 장애 보상</option>
+                                    <option>기타</option>
+                                </select>
+                                <button onClick={() => void handleGiveToken()} style={s.inlineSubmitBtn}>지급하기</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {/* 🛡️ 필터 바 */}
             <div style={s.filterWrapper}>
@@ -193,9 +199,9 @@ const UserManagement = () => {
                             onClick={() => setFilter(f)}
                             style={{
                                 ...s.filterBtn,
-                                backgroundColor: filter === f ? '#7C3AED' : '#fff',
+                                backgroundColor: filter === f ? '#7C3AED' : 'rgba(255,255,255,0.5)',
                                 color: filter === f ? '#fff' : '#6B7280',
-                                border: filter === f ? '1px solid #7C3AED' : '1px solid #E5E7EB',
+                                border: filter === f ? '1px solid #7C3AED' : '1px solid rgba(229, 231, 235, 0.5)',
                             }}
                         >
                             {f === 'ALL' ? '전체' : f === 'USER' ? '일반' : f === 'ADMIN' ? '관리자' : '정지'}
@@ -214,96 +220,96 @@ const UserManagement = () => {
             {/* 📋 유저 목록 테이블 */}
             <div style={s.logSection}>
                 <h3 style={s.sectionSubTitle}>📋 유저 목록 ({filteredUsers.length}명)</h3>
-                <div style={s.tableWrapper}>
+                <div style={s.tableCard}>
                     <table style={s.table}>
                         <thead>
-                        <tr style={s.tr}>
-                            <th style={s.th}>가입일</th>
-                            <th style={s.th}>닉네임</th>
-                            <th style={s.th}>이메일</th>
-                            <th style={s.th}>상태</th>
-                            <th style={s.th}>관리</th>
-                        </tr>
+                            <tr style={s.tr}>
+                                <th style={s.th}>가입일</th>
+                                <th style={s.th}>닉네임</th>
+                                <th style={s.th}>이메일</th>
+                                <th style={s.th}>상태</th>
+                                <th style={s.th}>관리</th>
+                            </tr>
                         </thead>
                         <tbody>
-                        {loading ? (
-                            <tr><td colSpan={5} style={s.emptyTd}>데이터 로드 중...</td></tr>
-                        ) : filteredUsers.map(u => (
-                            <tr key={u.id} style={s.tr}>
-                                <td style={s.td}>{new Date(u.createdAt).toLocaleDateString()}</td>
-                                <td style={{...s.td, fontWeight: 700}}>{u.nickname}</td>
-                                <td style={s.td}>{u.email}</td>
-                                <td style={s.td}>
-                                    <span style={{ color: u.isSuspended ? '#EF4444' : '#10B981', fontWeight: 800 }}>
-                                        {u.isSuspended ? '정지' : '정상'}
-                                    </span>
-                                </td>
-                                <td style={s.td}>
-                                    <button onClick={() => void handleToggleSuspension(u)} style={{ ...s.tableActionBtn, backgroundColor: u.isSuspended ? '#10B981' : '#EF4444' }}>
-                                        {u.isSuspended ? '해제' : '정지'}
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
+                            {loading ? (
+                                <tr><td colSpan={5} style={s.emptyTd}>데이터 로드 중...</td></tr>
+                            ) : filteredUsers.map(u => (
+                                <tr key={u.id} style={s.tr}>
+                                    <td style={s.td}>{new Date(u.createdAt).toLocaleDateString()}</td>
+                                    <td style={{...s.td, fontWeight: 700}}>{u.nickname}</td>
+                                    <td style={s.td}>{u.email}</td>
+                                    <td style={s.td}>
+                                        <span style={{ color: u.isSuspended ? '#EF4444' : '#10B981', fontWeight: 800 }}>
+                                            {u.isSuspended ? '정지' : '정상'}
+                                        </span>
+                                    </td>
+                                    <td style={s.td}>
+                                        <button onClick={() => void handleToggleSuspension(u)} style={{ ...s.tableActionBtn, backgroundColor: u.isSuspended ? '#10B981' : '#EF4444' }}>
+                                            {u.isSuspended ? '해제' : '정지'}
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            {/* 📝 토큰 지급 및 획득 이력 테이블 */}
-            <div style={{...s.logSection, marginTop: '40px'}}>
-                <h3 style={s.sectionSubTitle}>📝 최근 토큰 지급 및 획득 이력</h3>
-                <div style={s.tableWrapper}>
+            {/* 📝 토큰 지급 이력 */}
+            <div style={{...s.logSection, marginTop: '50px'}}>
+                <h3 style={s.sectionSubTitle}>📝 최근 토큰 상세 이력</h3>
+                <div style={s.tableCard}>
                     <table style={s.table}>
                         <thead>
-                        <tr style={s.tr}>
-                            <th style={s.th}>일시</th>
-                            <th style={s.th}>대상 유저</th>
-                            <th style={s.th}>변동 수량</th>
-                            <th style={s.th}>상세 사유</th>
-                            <th style={s.th}>처리자</th>
-                        </tr>
+                            <tr style={s.tr}>
+                                <th style={s.th}>일시</th>
+                                <th style={s.th}>대상 유저</th>
+                                <th style={s.th}>변동 수량</th>
+                                <th style={s.th}>상세 사유</th>
+                                <th style={s.th}>처리자</th>
+                            </tr>
                         </thead>
                         <tbody>
-                        {logs.length > 0 ? logs.map(log => {
-                            const isSignup = log.reason?.includes('가입');
-                            const isPurchase = log.type === 'purchase' || log.reason?.includes('구매');
-                            const targetNick = log.user?.nickname || "알 수 없음";
-                            const adminNick = log.admin?.nickname || (log.type === 'MANUAL' ? '관리자' : '🤖 시스템');
+                            {logs.length > 0 ? logs.map(log => {
+                                const isSignup = log.reason?.includes('가입');
+                                const isPurchase = log.type === 'purchase' || log.reason?.includes('구매');
+                                const targetNick = log.user?.nickname || "알 수 없음";
+                                const adminNick = log.admin?.nickname || (log.type === 'MANUAL' ? '관리자' : '🤖 시스템');
 
-                            return (
-                                <tr key={log.id} style={s.tr}>
-                                    <td style={s.td}>{log.createdAt ? new Date(log.createdAt).toLocaleString() : '-'}</td>
-                                    <td style={{...s.td, fontWeight: 600}}>{targetNick}</td>
-                                    <td style={{
-                                        ...s.td,
-                                        color: isSignup ? '#10B981' : isPurchase ? '#3B82F6' : '#6366F1',
-                                        fontWeight: 800
-                                    }}>
-                                        +{log.amount}
-                                    </td>
-                                    <td style={s.td}>
-                                        <span style={{
-                                            padding: '3px 8px',
-                                            borderRadius: '6px',
-                                            fontSize: '11px',
-                                            fontWeight: 700,
-                                            backgroundColor: isSignup ? '#D1FAE5' : isPurchase ? '#DBEAFE' : '#EEF2FF',
-                                            color: isSignup ? '#065F46' : isPurchase ? '#1E40AF' : '#3730A3',
+                                return (
+                                    <tr key={log.id} style={s.tr}>
+                                        <td style={s.td}>{log.createdAt ? new Date(log.createdAt).toLocaleString() : '-'}</td>
+                                        <td style={{...s.td, fontWeight: 600}}>{targetNick}</td>
+                                        <td style={{
+                                            ...s.td,
+                                            color: isSignup ? '#10B981' : isPurchase ? '#3B82F6' : '#6366F1',
+                                            fontWeight: 800
                                         }}>
-                                            {log.reason}
-                                        </span>
-                                    </td>
-                                    <td style={s.td}>
-                                        <span style={{color: !log.admin ? '#9CA3AF' : '#374151', fontSize: '12px'}}>
-                                            {adminNick}
-                                        </span>
-                                    </td>
-                                </tr>
-                            );
-                        }) : (
-                            <tr><td colSpan={5} style={s.emptyTd}>표시할 이력이 없습니다.</td></tr>
-                        )}
+                                            +{log.amount}
+                                        </td>
+                                        <td style={s.td}>
+                                            <span style={{
+                                                padding: '4px 10px',
+                                                borderRadius: '8px',
+                                                fontSize: '11px',
+                                                fontWeight: 800,
+                                                backgroundColor: isSignup ? '#D1FAE5' : isPurchase ? '#DBEAFE' : '#EEF2FF',
+                                                color: isSignup ? '#065F46' : isPurchase ? '#1E40AF' : '#3730A3',
+                                            }}>
+                                                {log.reason}
+                                            </span>
+                                        </td>
+                                        <td style={s.td}>
+                                            <span style={{color: !log.admin ? '#9CA3AF' : '#374151', fontSize: '12px', fontWeight: 600}}>
+                                                {adminNick}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                );
+                            }) : (
+                                <tr><td colSpan={5} style={s.emptyTd}>표시할 이력이 없습니다.</td></tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
@@ -312,37 +318,76 @@ const UserManagement = () => {
     );
 };
 
+// 🌌 스타일 디자인 (Glassmorphism 적용)
 const s: Record<string, React.CSSProperties> = {
-    container: { padding: '40px', maxWidth: '1100px', margin: '0 auto' },
-    header: { marginBottom: '30px' },
-    title: { fontSize: '26px', fontWeight: 900, color: '#4C1D95' },
-    meta: { color: '#6B7280', fontSize: '14px' },
-    searchSection: { display: 'flex', gap: '10px', marginBottom: '25px' },
-    searchInput: { flex: 1, padding: '12px 20px', borderRadius: '12px', border: '1px solid #DDD6FE', outline: 'none' },
-    searchBtn: { padding: '0 25px', borderRadius: '12px', border: 'none', background: '#7C3AED', color: '#fff', fontWeight: 700, cursor: 'pointer' },
-    filterWrapper: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', gap: '10px' },
-    filterBar: { display: 'flex', gap: '5px' },
-    filterBtn: { padding: '6px 14px', borderRadius: '20px', cursor: 'pointer', fontSize: '12px', transition: '0.2s', fontWeight: 600 },
-    filterInput: { padding: '8px 15px', borderRadius: '10px', border: '1px solid #E5E7EB', fontSize: '13px', width: '200px', outline: 'none' },
-    userCard: { backgroundColor: '#fff', borderRadius: '20px', padding: '25px', border: '1px solid #E5E7EB', boxShadow: '0 4px 6px rgba(0,0,0,0.02)', marginBottom: '30px' },
-    userHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-    nickname: { fontSize: '20px', fontWeight: 800, color: '#1F2937' },
-    emailSpan: { fontSize: '14px', fontWeight: 400, color: '#9CA3AF', marginLeft: '5px' },
-    statusBadge: { padding: '4px 10px', borderRadius: '6px', color: '#fff', fontSize: '11px', fontWeight: 700 },
-    suspendBtn: { padding: '6px 14px', borderRadius: '8px', border: 'none', color: '#fff', fontWeight: 700, fontSize: '12px', cursor: 'pointer' },
-    divider: { height: '1px', backgroundColor: '#F3F4F6', margin: '20px 0' },
-    actionSection: { display: 'flex', flexDirection: 'column', gap: '10px' },
-    sectionSubTitle: { fontSize: '17px', fontWeight: 800, color: '#1F2937', marginBottom: '10px' },
-    input: { padding: '10px', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '14px' },
-    inlineSubmitBtn: { padding: '0 20px', background: '#7C3AED', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' },
+    container: { padding: '40px 10px', maxWidth: '1200px', margin: '0 auto' },
+    header: { marginBottom: '35px' },
+    title: { fontSize: '28px', fontWeight: 900, color: '#4C1D95' },
+    meta: { color: '#7C3AED', fontSize: '15px', fontWeight: 600, opacity: 0.8 },
+
+    searchCard: {
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        backdropFilter: 'blur(10px)',
+        borderRadius: '30px',
+        padding: '30px',
+        boxShadow: '0 8px 32px rgba(139, 92, 246, 0.08)',
+        border: '1px solid rgba(255, 255, 255, 0.5)',
+        marginBottom: '40px'
+    },
+    searchFlex: { display: 'flex', gap: '15px' },
+    searchInput: { 
+        flex: 1, padding: '15px 25px', borderRadius: '18px', 
+        border: '1px solid rgba(124, 58, 237, 0.2)', outline: 'none', 
+        fontSize: '15px', backgroundColor: 'rgba(255,255,255,0.5)',
+        transition: 'all 0.2s'
+    },
+    searchBtn: { 
+        padding: '0 35px', borderRadius: '18px', border: 'none', 
+        background: '#7C3AED', color: '#fff', fontWeight: 800, 
+        cursor: 'pointer', boxShadow: '0 4px 15px rgba(124, 58, 237, 0.3)',
+        transition: 'transform 0.2s'
+    },
+
+    userDetail: { marginTop: '25px' },
+    userHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
+    userBasic: { display: 'flex', flexDirection: 'column', gap: '4px' },
+    nickname: { fontSize: '22px', fontWeight: 900, color: '#1F2937', margin: 0 },
+    emailSpan: { fontSize: '15px', color: '#9CA3AF' },
+    badgeGroup: { display: 'flex', gap: '10px' },
+    statusBadge: { padding: '6px 14px', borderRadius: '10px', color: '#fff', fontSize: '12px', fontWeight: 800 },
+    suspendBtn: { padding: '8px 18px', borderRadius: '12px', border: 'none', color: '#fff', fontWeight: 800, fontSize: '12px', cursor: 'pointer' },
+    
+    divider: { height: '1px', backgroundColor: 'rgba(229, 231, 235, 0.5)', margin: '20px 0' },
+
+    actionSection: { backgroundColor: 'rgba(124, 58, 237, 0.03)', padding: '20px', borderRadius: '20px' },
+    sectionSubTitle: { fontSize: '18px', fontWeight: 800, color: '#1F2937', marginBottom: '15px' },
+    tokenForm: { display: 'flex', gap: '15px' },
+    input: { padding: '12px 15px', borderRadius: '12px', border: '1px solid rgba(209, 213, 219, 0.5)', fontSize: '14px', outline: 'none' },
+    inlineSubmitBtn: { padding: '0 25px', background: '#7C3AED', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: 800, cursor: 'pointer' },
+
+    filterWrapper: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '20px' },
+    filterBar: { display: 'flex', gap: '8px' },
+    filterBtn: { padding: '8px 18px', borderRadius: '14px', cursor: 'pointer', fontSize: '13px', transition: 'all 0.2s', fontWeight: 700 },
+    filterInput: { 
+        padding: '10px 20px', borderRadius: '14px', border: '1px solid rgba(229, 231, 235, 0.8)', 
+        fontSize: '14px', width: '250px', outline: 'none', backgroundColor: 'rgba(255,255,255,0.5)'
+    },
+
     logSection: { marginTop: '10px' },
-    tableWrapper: { backgroundColor: '#fff', borderRadius: '15px', overflow: 'hidden', border: '1px solid #E5E7EB' },
-    table: { width: '100%', borderCollapse: 'collapse', fontSize: '13px' },
-    th: { backgroundColor: '#F9FAFB', padding: '15px', textAlign: 'left', color: '#6B7280', borderBottom: '1px solid #E5E7EB' },
-    td: { padding: '15px', borderBottom: '1px solid #F3F4F6', color: '#374151' },
+    tableCard: { 
+        backgroundColor: 'rgba(255, 255, 255, 0.6)', 
+        backdropFilter: 'blur(10px)',
+        borderRadius: '25px', 
+        overflow: 'hidden', 
+        border: '1px solid rgba(255, 255, 255, 0.5)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.02)'
+    },
+    table: { width: '100%', borderCollapse: 'collapse', fontSize: '14px' },
+    th: { backgroundColor: 'rgba(249, 250, 251, 0.5)', padding: '18px', textAlign: 'left', color: '#6B7280', fontWeight: 800, borderBottom: '1px solid rgba(229, 231, 235, 0.5)' },
+    td: { padding: '18px', borderBottom: '1px solid rgba(243, 244, 246, 0.5)', color: '#374151' },
     tr: { transition: 'background 0.2s' },
-    tableActionBtn: { padding: '4px 10px', borderRadius: '6px', border: 'none', color: '#fff', fontSize: '11px', fontWeight: 700, cursor: 'pointer' },
-    emptyTd: { textAlign: 'center', padding: '50px', color: '#9CA3AF' }
+    tableActionBtn: { padding: '6px 14px', borderRadius: '10px', border: 'none', color: '#fff', fontSize: '12px', fontWeight: 800, cursor: 'pointer' },
+    emptyTd: { textAlign: 'center', padding: '100px', color: '#9CA3AF', fontSize: '16px', fontWeight: 600 }
 };
 
 export default UserManagement;

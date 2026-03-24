@@ -1,127 +1,64 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import React from 'react';
+import { Outlet, Navigate } from 'react-router-dom';
+import AdminSidebar from './AdminSidebar';
+import { useAuthStore } from '../../stores/useAuthStore';
 
-// 신고 데이터 타입 정의
-interface ReportedArtwork {
-    id: number;
-    title: string;
-    authorNickname: string;
-    reportCount: number;
-    reason: string;
-    imageUrl: string;
-    isHidden: boolean;
-}
+/**
+ * 전용 관리자 레이아웃 컴포넌트
+ * 사이드바와 메인 콘텐츠 영역의 전체 구조를 정의합니다.
+ */
+const AdminLayout = () => {
+    const { isAuthenticated, role } = useAuthStore();
 
-const AdminArtworkManagement = () => {
-    const [reports, setReports] = useState<ReportedArtwork[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    // 관리자 권한 체크 (방어적 로직)
+    const isAdmin = role === 'ADMIN' || String(role) === '100';
 
-    // 1. 신고된 작품 목록 가져오기
-    useEffect(() => {
-        const fetchReports = async () => {
-            try {
-                // 백엔드 API 연결 (예시 경로)
-                const res = await axios.get('/api/admin/reports');
-                setReports(res.data);
-            } catch (err) {
-                console.error("신고 목록 로딩 실패", err);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchReports();
-    }, []);
-
-    // 2. 작품 비공개/공개 전환 함수
-    const toggleVisibility = async (artworkId: number, currentStatus: boolean) => {
-        if (!confirm(currentStatus ? "이 작품을 다시 공개하시겠습니까?" : "이 작품을 비공개 처리하시겠습니까?")) return;
-
-        try {
-            await axios.patch(`/api/admin/artworks/${artworkId}/visibility`);
-            setReports(reports.map(r => r.id === artworkId ? { ...r, isHidden: !currentStatus } : r));
-        } catch (err) {
-            alert("상태 변경에 실패했습니다.");
-        }
-    };
+    if (!isAuthenticated || !isAdmin) {
+        return <Navigate to="/" replace />;
+    }
 
     return (
-        <div style={s.container}>
-            <header style={s.header}>
-                <h1 style={s.title}>📢 신고된 작품 관리</h1>
-                <p style={s.meta}>신고 횟수가 많은 순으로 정렬되어 있습니다.</p>
-            </header>
+        <div style={s.layout}>
+            {/* 1. 고정 사이드바 (Nav 전 전담) */}
+            <AdminSidebar />
 
-            <div style={s.grid}>
-                {isLoading ? <p>로딩 중...</p> : reports.map((item) => (
-                    <div key={item.id} style={{...s.card, opacity: item.isHidden ? 0.6 : 1}}>
-                        <div style={s.imageWrapper}>
-                            <img src={item.imageUrl} alt={item.title} style={s.image} />
-                            {item.isHidden && <div style={s.hiddenBadge}>비공개 상태</div>}
-                        </div>
-
-                        <div style={s.info}>
-                            <div style={s.badgeGroup}>
-                                <span style={s.reportBadge}>신고 {item.reportCount}건</span>
-                            </div>
-                            <h3 style={s.artworkTitle}>{item.title}</h3>
-                            <p style={s.author}>작가: {item.authorNickname}</p>
-                            <p style={s.reason}>최근 신고 사유: {item.reason}</p>
-
-                            <button
-                                onClick={() => toggleVisibility(item.id, item.isHidden)}
-                                style={{
-                                    ...s.actionBtn,
-                                    backgroundColor: item.isHidden ? '#10B981' : '#EF4444'
-                                }}
-                            >
-                                {item.isHidden ? "다시 공개하기" : "비공개 처리"}
-                            </button>
-                        </div>
-                    </div>
-                ))}
-            </div>
+            {/* 2. 메인 콘텐츠 영역 (스크롤 가능) */}
+            <main style={s.mainContent}>
+                <div style={s.container}>
+                    {/* 하위 라우트 컴포넌트들이 렌더링되는 지점 */}
+                    <Outlet />
+                </div>
+            </main>
         </div>
     );
 };
 
-// 🌌 스타일 가이드 (Inquiry 페이지 감성 계승)
+// 🌌 스타일 디자인 (Premium Admin Frame)
 const s: Record<string, React.CSSProperties> = {
-    container: { padding: '40px' },
-    header: { marginBottom: '40px' },
-    title: { fontSize: '28px', fontWeight: 800, color: '#5B21B6' },
-    meta: { color: '#7C3AED', fontWeight: 600, opacity: 0.8 },
-
-    grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '25px' },
-
-    card: {
-        backgroundColor: 'rgba(255, 255, 255, 0.7)',
-        backdropFilter: 'blur(10px)',
-        borderRadius: '30px',
-        overflow: 'hidden',
-        boxShadow: '0 8px 20px rgba(165, 180, 252, 0.1)',
-        border: '2px solid #FFFFFF',
-        transition: 'all 0.3s ease'
+    layout: { 
+        display: 'flex', 
+        minHeight: '100vh', 
+        backgroundColor: '#F8FAFC',
+        backgroundImage: `
+            radial-gradient(at 0% 0%, rgba(124, 58, 237, 0.03) 0px, transparent 50%),
+            radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.03) 0px, transparent 50%)
+        `,
     },
-
-    imageWrapper: { position: 'relative', width: '100%', height: '200px', overflow: 'hidden' },
-    image: { width: '100%', height: '100%', objectFit: 'cover' },
-    hiddenBadge: {
-        position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-        backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800
+    mainContent: {
+        flex: 1,
+        marginLeft: '260px', // 사이드바 너비
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
     },
-
-    info: { padding: '20px', display: 'flex', flexDirection: 'column', gap: '8px' },
-    badgeGroup: { marginBottom: '5px' },
-    reportBadge: { background: '#FEE2E2', color: '#EF4444', padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 800 },
-    artworkTitle: { fontSize: '18px', fontWeight: 800, color: '#4C1D95' },
-    author: { fontSize: '14px', color: '#64748B' },
-    reason: { fontSize: '13px', color: '#94A3B8', fontStyle: 'italic' },
-
-    actionBtn: {
-        marginTop: '10px', padding: '12px', border: 'none', borderRadius: '15px',
-        color: '#fff', fontWeight: 800, cursor: 'pointer', transition: 'transform 0.2s'
+    container: {
+        flex: 1,
+        padding: '0 20px 40px', // 좌우 20px, 하단 40px 여백
+        maxWidth: '1200px',
+        width: '100%',
+        margin: '0 auto',
+        boxSizing: 'border-box' as const,
     }
 };
 
-export default AdminArtworkManagement;
+export default AdminLayout;

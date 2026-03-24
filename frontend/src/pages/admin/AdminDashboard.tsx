@@ -53,12 +53,10 @@ const AdminDashboard = () => {
     const fetchStats = useCallback(async () => {
         try {
             setLoading(true);
-            const token = useAuthStore.getState().accessToken; // 👈 스토어에서 직접 토큰 가져오기
+            const token = useAuthStore.getState().accessToken;
 
             const res = await axios.get('/api/admin/dashboard/stats', {
-                headers: {
-                    Authorization: `Bearer ${token}` // 👈 헤더에 토큰 실어주기
-                }
+                headers: { Authorization: `Bearer ${token}` }
             });
             setStats(res.data);
         } catch (err) {
@@ -70,7 +68,7 @@ const AdminDashboard = () => {
 
     const fetchPendingInquiries = useCallback(async () => {
         try {
-            const res = await axios.get('/api/admin/inquiries/pending?limit=5', {
+            const res = await axios.get('/api/admin/inquiries/pending?limit=3', {
                 headers: { Authorization: `Bearer ${accessToken}` }
             });
             setPendingInquiries(res.data);
@@ -115,14 +113,14 @@ const AdminDashboard = () => {
     }, [accessToken]);
 
     useEffect(() => {
-        if (isAuthenticated && role === 'ADMIN') {
-            fetchStats();
-            fetchPendingInquiries();
-            fetchChartData();
+        if (isAuthenticated && (role === 'ADMIN' || String(role) === '100')) {
+            void fetchStats();
+            void fetchPendingInquiries();
+            void fetchChartData();
         }
     }, [isAuthenticated, role, fetchStats, fetchPendingInquiries, fetchChartData]);
 
-    if (!isAuthenticated || role !== 'ADMIN') {
+    if (!isAuthenticated || (role !== 'ADMIN' && String(role) !== '100')) {
         return <Navigate to="/" replace />;
     }
 
@@ -138,31 +136,43 @@ const AdminDashboard = () => {
             ) : stats ? (
                 <div style={s.grid}>
                     {/* 카드 1: 유저 현황 */}
-                    <div style={s.card}>
-                        <h3 style={s.cardLabel}>👥 전체 유저</h3>
-                        <div style={s.cardValue}>{stats.totalUsers.toLocaleString()} 명</div>
-                        <p style={s.cardSub}>오늘 신규: <span style={{color: '#10B981'}}>+{stats.todayNewUsers}</span></p>
+                    <div style={s.statCard}>
+                        <div style={s.iconBg}>👥</div>
+                        <div style={s.statInfo}>
+                            <h3 style={s.cardLabel}>전체 유저</h3>
+                            <div style={s.cardValue}>{stats.totalUsers.toLocaleString()} 명</div>
+                            <p style={s.cardSub}>오늘 신규: <span style={{color: '#10B981', fontWeight: 800}}>+{stats.todayNewUsers}</span></p>
+                        </div>
                     </div>
 
                     {/* 카드 2: 매출 현황 */}
-                    <div style={{...s.card, borderLeft: '6px solid #8B5CF6'}}>
-                        <h3 style={s.cardLabel}>💰 누적 매출</h3>
-                        <div style={{...s.cardValue, color: '#7C3AED'}}>₩ {stats.totalSales.toLocaleString()}</div>
-                        <p style={s.cardSub}>오늘 매출: <span style={{fontWeight: 700}}>₩ {stats.todaySales.toLocaleString()}</span></p>
+                    <div style={{...s.statCard, borderBottom: '4px solid #7C3AED'}}>
+                        <div style={{...s.iconBg, backgroundColor: 'rgba(124, 58, 237, 0.1)'}}>💰</div>
+                        <div style={s.statInfo}>
+                            <h3 style={s.cardLabel}>누적 매출</h3>
+                            <div style={{...s.cardValue, color: '#7C3AED'}}>₩ {stats.totalSales.toLocaleString()}</div>
+                            <p style={s.cardSub}>오늘 매출: <span style={{fontWeight: 800}}>₩ {stats.todaySales.toLocaleString()}</span></p>
+                        </div>
                     </div>
 
                     {/* 카드 3: 활성 상태 */}
-                    <div style={s.card}>
-                        <h3 style={s.cardLabel}>✅ 활성 유저</h3>
-                        <div style={{...s.cardValue, color: '#10B981'}}>{stats.activeUsers.toLocaleString()} 명</div>
-                        <p style={s.cardSub}>서비스 이용 중인 유저</p>
+                    <div style={{...s.statCard, borderBottom: '4px solid #10B981'}}>
+                        <div style={{...s.iconBg, backgroundColor: 'rgba(16, 185, 129, 0.1)'}}>✅</div>
+                        <div style={s.statInfo}>
+                            <h3 style={s.cardLabel}>활성 유저</h3>
+                            <div style={{...s.cardValue, color: '#10B981'}}>{stats.activeUsers.toLocaleString()} 명</div>
+                            <p style={s.cardSub}>서비스 정상 이용 중</p>
+                        </div>
                     </div>
 
                     {/* 카드 4: 정지 상태 */}
-                    <div style={{...s.card, borderLeft: '6px solid #EF4444'}}>
-                        <h3 style={s.cardLabel}>🚫 정지 유저</h3>
-                        <div style={{...s.cardValue, color: '#EF4444'}}>{stats.suspendedUsers.toLocaleString()} 명</div>
-                        <p style={s.cardSub}>운영 정책 위반 등의 사유</p>
+                    <div style={{...s.statCard, borderBottom: '4px solid #EF4444'}}>
+                        <div style={{...s.iconBg, backgroundColor: 'rgba(239, 68, 68, 0.1)'}}>🚫</div>
+                        <div style={s.statInfo}>
+                            <h3 style={s.cardLabel}>정지 유저</h3>
+                            <div style={{...s.cardValue, color: '#EF4444'}}>{stats.suspendedUsers.toLocaleString()} 명</div>
+                            <p style={s.cardSub}>운영 정책 위반</p>
+                        </div>
                     </div>
                 </div>
             ) : (
@@ -173,172 +183,206 @@ const AdminDashboard = () => {
             <div style={s.chartGrid}>
                 <div style={s.chartCard}>
                     <h3 style={s.chartTitle}>📂 문의 카테고리별 접수 현황</h3>
+                    <div style={s.divider} />
                     {categoryStats.length === 0 ? (
                         <div style={s.chartEmpty}>데이터 없음</div>
                     ) : (
-                        <ResponsiveContainer width="100%" height={220}>
-                            <BarChart data={categoryStats} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                                <XAxis dataKey="name" tick={{ fontSize: 13, fill: '#6B7280' }} />
-                                <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#9CA3AF' }} />
-                                <Tooltip formatter={(v) => [`${v}건`, '접수']} />
-                                <Bar dataKey="count" fill="#7C3AED" radius={[6, 6, 0, 0]} />
+                        <ResponsiveContainer width="100%" height={250}>
+                            <BarChart data={categoryStats} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(229, 231, 235, 0.5)" />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 13, fill: '#6B7280', fontWeight: 600 }} />
+                                <YAxis axisLine={false} tickLine={false} allowDecimals={false} tick={{ fontSize: 12, fill: '#9CA3AF' }} />
+                                <Tooltip cursor={{fill: 'rgba(124, 58, 237, 0.05)'}} contentStyle={{borderRadius: '15px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)'}} />
+                                <Bar dataKey="count" fill="#7C3AED" radius={[8, 8, 0, 0]} barSize={40} />
                             </BarChart>
                         </ResponsiveContainer>
                     )}
                 </div>
 
                 <div style={s.chartCard}>
-                    <h3 style={s.chartTitle}>🎨 날짜별 이미지 생성 수 (최근 14일)</h3>
+                    <h3 style={s.chartTitle}>🎨 날짜별 이미지 생성 추이 (최근 14일)</h3>
+                    <div style={s.divider} />
                     {artworkByDate.length === 0 ? (
                         <div style={s.chartEmpty}>데이터 없음</div>
                     ) : (
-                        <ResponsiveContainer width="100%" height={220}>
-                            <LineChart data={artworkByDate} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6B7280' }} tickFormatter={(d) => d.slice(5)} />
-                                <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#9CA3AF' }} />
-                                <Tooltip formatter={(v) => [`${v}개`, '생성']} labelFormatter={(l) => `날짜: ${l}`} />
-                                <Line type="monotone" dataKey="count" stroke="#7C3AED" strokeWidth={2.5} dot={{ r: 4, fill: '#7C3AED' }} activeDot={{ r: 6 }} />
+                        <ResponsiveContainer width="100%" height={250}>
+                            <LineChart data={artworkByDate} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(229, 231, 235, 0.5)" />
+                                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6B7280' }} tickFormatter={(d) => d.slice(5)} />
+                                <YAxis axisLine={false} tickLine={false} allowDecimals={false} tick={{ fontSize: 12, fill: '#9CA3AF' }} />
+                                <Tooltip contentStyle={{borderRadius: '15px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)'}} />
+                                <Line type="monotone" dataKey="count" stroke="#7C3AED" strokeWidth={4} dot={{ r: 4, fill: '#fff', stroke: '#7C3AED', strokeWidth: 2 }} activeDot={{ r: 6, strokeWidth: 0 }} />
                             </LineChart>
                         </ResponsiveContainer>
                     )}
                 </div>
             </div>
 
-            {/* 📬 응답 대기 문의 */}
-            <div style={s.inquirySection}>
-                <div style={s.inquirySectionHeader}>
-                    <h3 style={s.sectionSubTitle}>📬 응답 대기 중
-                        {pendingInquiries.length > 0 && (
-                            <span style={s.pendingCount}>{pendingInquiries.length}</span>
-                        )}
-                    </h3>
-                    <button style={s.goInquiryBtn} onClick={() => navigate('/admin/inquiries')}>
-                        문의게시판 바로가기 →
-                    </button>
-                </div>
+            <div style={s.bottomContent}>
+                {/* 📬 응답 대기 문의 */}
+                <div style={s.inquirySection}>
+                    <div style={s.sectionHeader}>
+                        <h3 style={s.sectionSubTitle}>📬 미처리 문의 (최근 3건)</h3>
+                        <button style={s.textBtn} onClick={() => navigate('/admin/inquiries')}>전체보기 →</button>
+                    </div>
 
-                {pendingInquiries.length === 0 ? (
-                    <div style={s.inquiryEmpty}>미응답 문의가 없습니다.</div>
-                ) : (
-                    <div style={s.inquiryList}>
-                        {pendingInquiries.map(item => (
-                            <div key={item.id} style={s.inquiryCard}>
-                                <div style={s.inquiryCardHeader} onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}>
-                                    <div style={s.inquiryMeta}>
-                                        <span style={s.inquiryCategoryTag}>{CATEGORY_LABELS[item.category] ?? item.category}</span>
-                                        <span style={s.inquiryTitle}>{item.title}</span>
-                                    </div>
-                                    <div style={s.inquiryRight}>
-                                        <span style={s.inquiryEmail}>{item.email}</span>
-                                        <span style={s.inquiryDate}>{new Date(item.createdAt).toLocaleDateString('ko-KR')}</span>
-                                        <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{expandedId === item.id ? '▲' : '▼'}</span>
-                                    </div>
-                                </div>
-
-                                {expandedId === item.id && (
-                                    <div style={s.inquiryExpanded}>
-                                        <p style={s.inquiryContent}>{item.content}</p>
-                                        <div style={s.replyForm}>
-                                            <textarea
-                                                style={s.textarea}
-                                                placeholder="이메일로 발송할 답변 내용을 입력하세요..."
-                                                value={replyMap[item.id] ?? ''}
-                                                onChange={e => setReplyMap(prev => ({ ...prev, [item.id]: e.target.value }))}
-                                                rows={3}
-                                            />
-                                            <button
-                                                style={{ ...s.submitBtn, opacity: submitting === item.id ? 0.6 : 1 }}
-                                                onClick={() => handleReply(item.id)}
-                                                disabled={submitting === item.id || !replyMap[item.id]?.trim()}
-                                            >
-                                                {submitting === item.id ? '발송 중...' : '이메일로 답변 발송'}
-                                            </button>
+                    {pendingInquiries.length === 0 ? (
+                        <div style={s.inquiryEmpty}>모든 문의가 처리되었습니다. ✨</div>
+                    ) : (
+                        <div style={s.inquiryList}>
+                            {pendingInquiries.map(item => (
+                                <div key={item.id} style={s.inquiryItem}>
+                                    <div style={s.inquiryMain} onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}>
+                                        <div style={s.inquiryInfo}>
+                                            <span style={s.categoryTag}>{CATEGORY_LABELS[item.category] || item.category}</span>
+                                            <span style={s.inquiryTitle}>{item.title}</span>
+                                        </div>
+                                        <div style={s.inquiryMetaInfo}>
+                                            <span style={s.inquiryDate}>{new Date(item.createdAt).toLocaleDateString()}</span>
+                                            <span style={s.arrow}>{expandedId === item.id ? '▴' : '▾'}</span>
                                         </div>
                                     </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+                                    {expandedId === item.id && (
+                                        <div style={s.inquiryExpand}>
+                                            <p style={s.inquiryText}>{item.content}</p>
+                                            <div style={s.replyBox}>
+                                                <textarea
+                                                    style={s.textarea}
+                                                    placeholder="답변을 입력해 주세요..."
+                                                    value={replyMap[item.id] ?? ''}
+                                                    onChange={e => setReplyMap(prev => ({ ...prev, [item.id]: e.target.value }))}
+                                                />
+                                                <button 
+                                                    style={{...s.replyBtn, opacity: submitting === item.id ? 0.6 : 1}} 
+                                                    onClick={() => handleReply(item.id)}
+                                                    disabled={submitting === item.id}
+                                                >
+                                                    {submitting === item.id ? '전송 중' : '답변 전송'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
 
-            {/* 💡 바로가기 섹션 */}
-            <div style={s.quickMenu}>
-                <h3 style={s.sectionSubTitle}>🚀 빠른 관리 메뉴</h3>
-                <div style={{display: 'flex', gap: '15px'}}>
-                    <button style={s.menuBtn} onClick={() => window.location.href='/admin/users'}>통합 관리하기</button>
-                    <button style={s.menuBtn} onClick={() => window.location.href='/admin/payments'}>결제 내역보기</button>
+                {/* 🚀 빠른 관리 */}
+                <div style={s.quickSection}>
+                    <h3 style={s.sectionSubTitle}>🚀 빠른 관리</h3>
+                    <div style={s.quickGrid}>
+                        <button style={s.quickBtn} onClick={() => navigate('/admin/users')}>
+                            <span>👥</span> 유저 관리
+                        </button>
+                        <button style={s.quickBtn} onClick={() => navigate('/admin/artworks')}>
+                            <span>🚫</span> 신고 관리
+                        </button>
+                        <button style={s.quickBtn} onClick={() => navigate('/admin/payments')}>
+                            <span>💳</span> 결제 확인
+                        </button>
+                        <button style={s.quickBtn} onClick={() => navigate('/admin/images')}>
+                            <span>🖼️</span> 메인 관리
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     );
 };
 
-// 🌌 스타일 디자인
+// 🌌 스타일 시스템 (Glassmorphism & Standardized Admin Design)
 const s: Record<string, React.CSSProperties> = {
-    container: { padding: '40px', maxWidth: '1100px', margin: '0 auto' },
+    container: { padding: '40px 10px', maxWidth: '1200px', margin: '0 auto' },
     header: { marginBottom: '40px' },
-    title: { fontSize: '32px', fontWeight: 800, color: '#4C1D95' },
-    meta: { color: '#6D28D9', fontSize: '16px', opacity: 0.9 },
-    grid: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-        gap: '25px',
-        marginBottom: '50px'
-    },
-    card: {
-        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    title: { fontSize: '32px', fontWeight: 900, color: '#4C1D95' },
+    meta: { color: '#7C3AED', fontSize: '16px', fontWeight: 600, opacity: 0.8 },
+
+    grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '25px', marginBottom: '40px' },
+    
+    statCard: {
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
         backdropFilter: 'blur(10px)',
-        padding: '30px',
-        borderRadius: '25px',
-        boxShadow: '0 10px 20px rgba(139, 92, 246, 0.1)',
-        borderLeft: '6px solid #10B981', // 기본 초록색 포인트
+        borderRadius: '30px',
+        padding: '25px',
         display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center'
+        alignItems: 'center',
+        gap: '20px',
+        border: '1px solid rgba(255, 255, 255, 0.5)',
+        boxShadow: '0 8px 32px rgba(139, 92, 246, 0.05)',
+        transition: 'transform 0.2s'
     },
-    cardLabel: { fontSize: '15px', fontWeight: 700, color: '#6B7280', marginBottom: '10px' },
-    cardValue: { fontSize: '28px', fontWeight: 900, color: '#1F2937', marginBottom: '8px' },
-    cardSub: { fontSize: '14px', color: '#9CA3AF' },
-    inquirySection: { marginBottom: '40px' },
-    inquirySectionHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' },
-    pendingCount: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#F59E0B', color: '#fff', fontSize: '11px', fontWeight: 800, borderRadius: '50%', width: '20px', height: '20px', marginLeft: '8px' },
-    goInquiryBtn: { padding: '8px 18px', background: '#EDE9FE', color: '#7C3AED', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' },
-    inquiryEmpty: { textAlign: 'center', padding: '32px', background: '#F9FAFB', borderRadius: '14px', color: '#9CA3AF', fontSize: '14px' },
-    inquiryList: { display: 'flex', flexDirection: 'column', gap: '10px' },
-    inquiryCard: { background: '#fff', borderRadius: '12px', border: '1.5px solid #E5E7EB', borderLeft: '4px solid #F59E0B', boxShadow: '0 2px 6px rgba(0,0,0,0.04)', overflow: 'hidden' },
-    inquiryCardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 18px', cursor: 'pointer' },
-    inquiryMeta: { display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 },
-    inquiryCategoryTag: { background: '#FEF3C7', color: '#D97706', fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', whiteSpace: 'nowrap' as const },
-    inquiryTitle: { fontSize: '14px', fontWeight: 600, color: '#1F2937', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const },
-    inquiryRight: { display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 },
-    inquiryEmail: { fontSize: '12px', color: '#9CA3AF' },
+    iconBg: {
+        width: '60px', height: '60px', borderRadius: '18px', backgroundColor: 'rgba(124, 58, 237, 0.05)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px'
+    },
+    statInfo: { display: 'flex', flexDirection: 'column', gap: '4px' },
+    cardLabel: { fontSize: '14px', fontWeight: 700, color: '#6B7280' },
+    cardValue: { fontSize: '24px', fontWeight: 900, color: '#1F2937' },
+    cardSub: { fontSize: '13px', color: '#9CA3AF' },
+
+    chartGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '30px', marginBottom: '40px' },
+    chartCard: {
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        backdropFilter: 'blur(10px)',
+        borderRadius: '30px',
+        padding: '30px',
+        border: '1px solid rgba(255, 255, 255, 0.5)',
+        boxShadow: '0 8px 32px rgba(139, 92, 246, 0.05)'
+    },
+    chartTitle: { fontSize: '18px', fontWeight: 800, color: '#4C1D95', marginBottom: '15px' },
+    divider: { height: '1px', backgroundColor: 'rgba(229, 231, 235, 0.5)', marginBottom: '20px' },
+    chartEmpty: { textAlign: 'center', padding: '100px 0', color: '#9CA3AF', fontWeight: 600 },
+
+    bottomContent: { display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '30px' },
+    inquirySection: {
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        backdropFilter: 'blur(10px)',
+        borderRadius: '30px',
+        padding: '30px',
+        border: '1px solid rgba(255, 255, 255, 0.5)',
+        boxShadow: '0 8px 32px rgba(139, 92, 246, 0.05)'
+    },
+    sectionHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
+    sectionSubTitle: { fontSize: '20px', fontWeight: 800, color: '#4C1D95', margin: 0 },
+    textBtn: { border: 'none', background: 'none', color: '#7C3AED', fontWeight: 700, cursor: 'pointer', fontSize: '14px' },
+    
+    inquiryEmpty: { textAlign: 'center', padding: '60px 0', color: '#9CA3AF', fontWeight: 600 },
+    inquiryList: { display: 'flex', flexDirection: 'column', gap: '15px' },
+    inquiryItem: { borderRadius: '20px', border: '1px solid rgba(229, 231, 235, 0.5)', overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.4)' },
+    inquiryMain: { padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', transition: 'background 0.2s' },
+    inquiryInfo: { display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 },
+    categoryTag: { background: '#EDE9FE', color: '#7C3AED', fontSize: '11px', fontWeight: 800, padding: '4px 10px', borderRadius: '8px' },
+    inquiryTitle: { fontSize: '14px', fontWeight: 700, color: '#1F2937', whiteSpace: 'nowrap' as const, overflow: 'hidden', textOverflow: 'ellipsis' },
+    inquiryMetaInfo: { display: 'flex', alignItems: 'center', gap: '10px' },
     inquiryDate: { fontSize: '12px', color: '#9CA3AF' },
-    inquiryExpanded: { padding: '0 18px 16px', borderTop: '1px solid #F3F4F6' },
-    inquiryContent: { fontSize: '13px', color: '#374151', lineHeight: 1.7, margin: '12px 0', padding: '12px', background: '#F9FAFB', borderRadius: '8px' },
-    replyForm: { display: 'flex', flexDirection: 'column', gap: '8px' },
-    textarea: { width: '100%', padding: '10px 12px', fontSize: '13px', border: '1.5px solid #E5E7EB', borderRadius: '10px', resize: 'vertical' as const, outline: 'none', boxSizing: 'border-box' as const, fontFamily: 'inherit' },
-    submitBtn: { alignSelf: 'flex-end', padding: '9px 22px', background: 'linear-gradient(135deg,#7C3AED,#6366F1)', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' },
-    chartGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '24px', marginBottom: '40px' },
-    chartCard: { background: '#fff', borderRadius: '20px', padding: '24px 28px', boxShadow: '0 4px 16px rgba(139,92,246,0.08)', border: '1px solid #EDE9FE' },
-    chartTitle: { fontSize: '15px', fontWeight: 700, color: '#5B21B6', marginBottom: '16px' },
-    chartEmpty: { textAlign: 'center' as const, padding: '60px 0', color: '#D1D5DB', fontSize: '14px' },
-    quickMenu: { marginTop: '48px' },
-    sectionSubTitle: { fontSize: '20px', fontWeight: 800, color: '#5B21B6', marginBottom: '20px' },
-    menuBtn: {
-        padding: '15px 25px',
-        borderRadius: '15px',
-        border: 'none',
-        background: '#fff',
-        color: '#7C3AED',
-        fontWeight: 700,
-        cursor: 'pointer',
-        boxShadow: '0 4px 10px rgba(0,0,0,0.05)',
-        transition: 'all 0.2s'
+    arrow: { color: '#9CA3AF', fontSize: '12px' },
+    
+    inquiryExpand: { padding: '20px', borderTop: '1px solid rgba(229, 231, 235, 0.3)', backgroundColor: 'rgba(255,255,255,0.2)' },
+    inquiryText: { fontSize: '14px', color: '#4B5563', lineHeight: 1.6, margin: '0 0 20px', whiteSpace: 'pre-wrap' as const },
+    replyBox: { display: 'flex', flexDirection: 'column', gap: '10px' },
+    textarea: { 
+        width: '100%', padding: '15px', borderRadius: '15px', border: '1px solid rgba(209, 213, 219, 0.5)', 
+        fontSize: '14px', outline: 'none', resize: 'vertical' as const, minHeight: '80px', fontFamily: 'inherit'
     },
-    emptyState: { textAlign: 'center', padding: '100px', color: '#94A3B8', fontSize: '18px' }
+    replyBtn: { alignSelf: 'flex-end', padding: '10px 25px', background: '#7C3AED', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: 800, cursor: 'pointer' },
+
+    quickSection: {
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        backdropFilter: 'blur(10px)',
+        borderRadius: '30px',
+        padding: '30px',
+        border: '1px solid rgba(255, 255, 255, 0.5)',
+        boxShadow: '0 8px 32px rgba(139, 92, 246, 0.05)'
+    },
+    quickGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '15px' },
+    quickBtn: { 
+        padding: '20px', borderRadius: '20px', border: 'none', backgroundColor: 'rgba(124, 58, 237, 0.05)', 
+        color: '#4C1D95', fontWeight: 800, cursor: 'pointer', display: 'flex', flexDirection: 'column', 
+        alignItems: 'center', gap: '10px', transition: 'all 0.2s', fontSize: '14px'
+    },
+
+    emptyState: { textAlign: 'center', padding: '100px 0', color: '#9CA3AF', fontSize: '18px', fontWeight: 600 }
 };
 
 export default AdminDashboard;

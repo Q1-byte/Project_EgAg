@@ -48,11 +48,15 @@ const AdminArtworkManagement = () => {
         <div style={s.container}>
             <header style={s.header}>
                 <h1 style={s.title}>📢 신고된 작품 관리</h1>
-                <p style={s.meta}>신고 횟수가 많은 순으로 정렬되어 있습니다.</p>
+                <p style={s.meta}>신고 횟수가 많은 순으로 정렬되어 있습니다. 🔥</p>
             </header>
 
             <div style={s.grid}>
-                {isLoading ? <p>로딩 중...</p> : reports.map((item) => (
+                {isLoading ? (
+                    <div style={s.emptyState}>로딩 중... 🔄</div>
+                ) : reports.length === 0 ? (
+                    <div style={s.emptyState}>신고된 작품이 없습니다. ✨</div>
+                ) : reports.map((item) => (
                     <div key={item.id} style={{...s.card, opacity: item.isHidden ? 0.6 : 1}}>
                         <div style={s.imageWrapper}>
                             <img src={item.imageUrl} alt={item.title} style={s.image} />
@@ -84,11 +88,11 @@ const AdminArtworkManagement = () => {
     );
 };
 
-// 🌌 스타일 가이드 (Inquiry 페이지 감성 계승)
+// 🌌 스타일 가이드 (Glassmorphism 강화)
 const s: Record<string, React.CSSProperties> = {
     container: { padding: '40px' },
     header: { marginBottom: '40px' },
-    title: { fontSize: '28px', fontWeight: 800, color: '#5B21B6' },
+    title: { fontSize: '28px', fontWeight: 800, color: '#4C1D95' },
     meta: { color: '#7C3AED', fontWeight: 600, opacity: 0.8 },
 
     grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '25px' },
@@ -98,8 +102,8 @@ const s: Record<string, React.CSSProperties> = {
         backdropFilter: 'blur(10px)',
         borderRadius: '30px',
         overflow: 'hidden',
-        boxShadow: '0 8px 20px rgba(165, 180, 252, 0.1)',
-        border: '2px solid #FFFFFF',
+        boxShadow: '0 8px 30px rgba(139, 92, 246, 0.1)',
+        border: '1px solid rgba(255, 255, 255, 0.5)',
         transition: 'all 0.3s ease'
     },
 
@@ -120,8 +124,9 @@ const s: Record<string, React.CSSProperties> = {
 
     actionBtn: {
         marginTop: '10px', padding: '12px', border: 'none', borderRadius: '15px',
-        color: '#fff', fontWeight: 800, cursor: 'pointer', transition: 'transform 0.2s'
-    }
+        color: '#fff', fontWeight: 800, cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s'
+    },
+    emptyState: { textAlign: 'center', padding: '60px', color: '#94A3B8', fontSize: '16px', gridColumn: '1 / -1' }
 };
 
 export default AdminArtworkManagement;

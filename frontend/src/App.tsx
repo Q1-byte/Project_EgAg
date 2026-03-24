@@ -33,9 +33,10 @@ import EditProfile from './artwork/EditProfile'
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUserManagement from './pages/admin/UserManagement';
 import PaymentManagement from './pages/admin/PaymentManagement';
-import AdminSidebar from './pages/admin/AdminSidebar';
+import AdminLayout from './pages/admin/AdminLayout';
 import AdminImageManagement from './pages/admin/AdminImageManagement';
 import AdminInquiryManagement from './pages/admin/AdminInquiryManagement';
+import AdminArtworkManagement from './pages/admin/AdminArtworkManagement';
 
 function ScrollToTop() {
     const { pathname } = useLocation()
@@ -106,7 +107,7 @@ function App() {
                 <Route path="/mypage" element={<MyPage />} />
 
                 {/* --- 🛡️ 어드민 영역 (중첩 라우팅) --- */}
-                <Route path="/admin" element={<AdminSidebar />}>
+                <Route path="/admin" element={<AdminLayout />}>
                     <Route index element={<AdminDashboard />} />
                     <Route path="dashboard" element={<AdminDashboard />} />
                     {/* ✅ 통합 유저 관리 (토큰 + 상태 변경) */}
@@ -114,6 +115,7 @@ function App() {
                     <Route path="payments" element={<PaymentManagement />} />
                     <Route path="images" element={<AdminImageManagement />} />
                     <Route path="inquiries" element={<AdminInquiryManagement />} />
+                    <Route path="artworks" element={<AdminArtworkManagement />} />
                 </Route>
 
                 {/* 404 / 500 페이지 */}
