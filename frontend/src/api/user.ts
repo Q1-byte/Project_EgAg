@@ -106,3 +106,19 @@ export const deleteArtwork = (id: string) =>
 
 export const getPublicArtworks = () =>
   client.get<ArtworkSummary[]>('/gallery/public').then(res => res.data)
+
+// --- 출석체크 API ---
+export const getTodayAttendance = async (): Promise<{ attended: boolean }> => {
+  const response = await client.get('/attendance/today')
+  return response.data
+}
+
+export const checkInAttendance = async (): Promise<{ message: string }> => {
+  const response = await client.post('/attendance')
+  return response.data
+}
+
+export const getAttendanceHistory = async (): Promise<string[]> => {
+  const response = await client.get('/attendance/history')
+  return response.data
+}

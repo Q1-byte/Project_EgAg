@@ -4,6 +4,9 @@ import { consumeToken } from '../api/canvas'
 import { useAuthStore } from '../stores/useAuthStore'
 import { Ticket, Bell } from 'lucide-react'
 import { getUnreadCount } from '../api/notification'
+import { getTodayAttendance } from '../api/user'
+import AttendanceModal from './AttendanceModal'
+import ChickStamp from './ChickStamp'
 
 interface HeaderProps {
   hideOnScroll?: boolean
@@ -25,6 +28,8 @@ export default function Header({ hideOnScroll = false }: HeaderProps) {
   const [unreadCount, setUnreadCount] = useState(0)
   const [showDrawMenu, setShowDrawMenu] = useState(false)
   const [showTokenModal, setShowTokenModal] = useState<'canvas' | 'deco' | 'time' | null>(null)
+  const [showAttendanceModal, setShowAttendanceModal] = useState(false)
+  const [hasAttendedToday, setHasAttendedToday] = useState(false)
   const profileRef = useRef<HTMLDivElement>(null)
   const drawRef = useRef<HTMLDivElement>(null)
 
@@ -58,6 +63,20 @@ export default function Header({ hideOnScroll = false }: HeaderProps) {
     fetchCount()
     const interval = setInterval(fetchCount, 60000)
     return () => clearInterval(interval)
+  }, [isAuthenticated])
+
+  // 출석 상태 확인
+  useEffect(() => {
+    if (!isAuthenticated) return
+    const fetchAttendance = async () => {
+      try {
+        const { attended } = await getTodayAttendance()
+        setHasAttendedToday(attended)
+      } catch (err) {
+        console.error('Failed to fetch attendance status:', err)
+      }
+    }
+    fetchAttendance()
   }, [isAuthenticated])
 
   useEffect(() => {
@@ -137,6 +156,16 @@ export default function Header({ hideOnScroll = false }: HeaderProps) {
         </div>
       )}
 
+      {/* 출석체크 모달 */}
+      {showAttendanceModal && (
+        <AttendanceModal 
+          onClose={() => setShowAttendanceModal(false)} 
+          onSuccess={() => {
+            setHasAttendedToday(true)
+          }}
+        />
+      )}
+
       {/* 공유 SVG 필터 */}
       <svg style={{ position: 'absolute', width: 0, height: 0 }}>
         <defs>
@@ -169,6 +198,15 @@ export default function Header({ hideOnScroll = false }: HeaderProps) {
           transition: stroke-dasharray 0.5s ease, opacity 0.3s ease;
         }
         .sketch-btn:hover .pencil-zigzag { stroke-dasharray: 1.1 0; opacity: 1; }
+        
+        @keyframes stamp-shake {
+          0%, 100% { transform: rotate(0deg); }
+          25% { transform: rotate(-10deg); }
+          75% { transform: rotate(10deg); }
+        }
+        .stamp-wait {
+          animation: stamp-shake 2s infinite ease-in-out;
+        }
       `}</style>
 
       <header style={{
@@ -252,6 +290,42 @@ export default function Header({ hideOnScroll = false }: HeaderProps) {
               >
                 <Ticket size={13} style={{ marginRight: 4, verticalAlign: 'middle' }} />{tokenBalance}개
               </span>
+
+              {/* 출석체크 병아리 도장 */}
+              <div 
+                onClick={() => setShowAttendanceModal(true)}
+                style={{
+                  position: 'relative',
+                  width: 44, height: 44,
+                  borderRadius: 16,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer',
+                  background: hasAttendedToday ? 'rgba(107, 130, 160, 0.05)' : 'rgba(255, 215, 0, 0.1)',
+                  border: hasAttendedToday ? '1px solid rgba(138, 138, 170, 0.1)' : '1px solid rgba(255, 215, 0, 0.3)',
+                  transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                }}
+                className={hasAttendedToday ? '' : 'stamp-wait'}
+                onMouseEnter={e => { 
+                  (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.1)';
+                  (e.currentTarget as HTMLDivElement).style.background = 'rgba(255, 215, 0, 0.2)';
+                }}
+                onMouseLeave={e => { 
+                  (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)';
+                  (e.currentTarget as HTMLDivElement).style.background = hasAttendedToday ? 'rgba(107, 130, 160, 0.05)' : 'rgba(255, 215, 0, 0.1)';
+                }}
+              >
+                <div style={{ position: 'relative', top: -5 }}>
+                  <ChickStamp size={32} isHappy={hasAttendedToday} isGray={hasAttendedToday} />
+                </div>
+                {!hasAttendedToday && (
+                  <span style={{
+                    position: 'absolute', top: -2, right: -2,
+                    width: 12, height: 12, borderRadius: 6,
+                    background: '#FF5C8D', border: '2px solid #fff',
+                    animation: 'pulse 1.5s infinite'
+                  }} />
+                )}
+              </div>
 
               {/* 알림 종 아이콘 */}
               <div 
