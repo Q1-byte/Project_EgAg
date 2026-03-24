@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// ── 데이터 생성 로직 ──
+// ── 데이터 생성 로직 (생략 없음) ──
 const generateStars = (count: number) => {
     return [...Array(count)].map((_, i) => ({
         id: i,
@@ -36,10 +36,13 @@ const NotFound: React.FC = () => {
 
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
+            // 패럴랙스 효과 (배경)
             const x = (e.clientX / window.innerWidth - 0.5);
             const y = (e.clientY / window.innerHeight - 0.5);
             setMousePos({ x: x * 30, y: y * 30, rawX: e.clientX, rawY: e.clientY });
-            setEyePos({ px: x * 8, py: y * 8 });
+
+            // 🛠️ 시선 추적 (더 기민하게 조정)
+            setEyePos({ px: x * 10, py: y * 10 });
         };
 
         const blinkInterval = setInterval(() => {
@@ -72,27 +75,62 @@ const NotFound: React.FC = () => {
     return (
         <div style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            height: '100vh', background: '#0a0514', color: '#ffffff', textAlign: 'center',
+            height: '100vh', background: '#0a0514', // 깊은 우주색
+            color: '#ffffff', textAlign: 'center', padding: '20px',
             fontFamily: "'Pretendard', sans-serif", position: 'relative', overflow: 'hidden',
         }}>
             <style>{spaceStyle}</style>
 
-            {/* 1. 배경 효과 (가장 뒤) */}
-            <div style={{ position: 'absolute', width: '80vw', height: '80vh', background: 'radial-gradient(circle, rgba(168, 85, 247, 0.1) 0%, transparent 70%)', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', filter: 'blur(100px)', zIndex: 0 }} />
-            <div style={{ position: 'absolute', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, transparent 70%)', left: mousePos.rawX - 250, top: mousePos.rawY - 250, pointerEvents: 'none', zIndex: 1 }} />
+            {/* 🛠️ 효과 1: 배경 은하수 안개 (기본 은은한 빛) */}
+            <div style={{
+                position: 'absolute', width: '80vw', height: '80vh',
+                background: 'radial-gradient(circle, rgba(168, 85, 247, 0.1) 0%, transparent 70%)',
+                left: '50%', top: '50%', transform: 'translate(-50%, -50%)',
+                filter: 'blur(100px)', zIndex: 0
+            }} />
 
-            {/* 별 & 물음표 */}
+            {/* 🛠️ 효과 2: [수정] 강력해진 마우스 위치 조명 (블랙홀 탐사) */}
+            <div style={{
+                position: 'absolute',
+                width: '600px', // 크기 확대 (500 -> 600)
+                height: '600px',
+                // [핵심] 투명도 대폭 상승 (0.03 -> 0.08) 및 그라데이션 경계 강화
+                background: 'radial-gradient(circle at center, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.01) 40%, transparent 80%)',
+                left: mousePos.rawX - 300, top: mousePos.rawY - 300,
+                pointerEvents: 'none',
+                zIndex: 10, // 병아리와 텍스트 위로 올림 (더 확실한 조명 효과)
+                filter: 'blur(50px)', // 더 몽환적인 네온광
+            }} />
+
+            {/* 별들 (패럴랙스) */}
             {STAR_DATA.map((star) => (
-                <div key={star.id} style={{ position: 'absolute', top: star.top, left: star.left, width: star.size, height: star.size, backgroundColor: '#fff', borderRadius: '50%', opacity: 0.6, transform: `translate(${mousePos.x * star.speed}px, ${mousePos.y * star.speed}px)`, transition: 'transform 0.1s ease-out', zIndex: 1 }} />
-            ))}
-            {QUESTION_MARK_DATA.map((q) => (
-                <div key={q.id} style={{ position: 'absolute', top: q.top, left: q.left, fontSize: q.fontSize, fontWeight: 700, color: '#a855f7', opacity: q.opacity, zIndex: 2, userSelect: 'none', animation: `drift ${q.duration} infinite ease-in-out ${q.delay}`, transform: `translate(${mousePos.x * 0.5}px, ${mousePos.y * 0.5}px)` }}>?</div>
+                <div key={star.id} style={{
+                    position: 'absolute', top: star.top, left: star.left, width: star.size, height: star.size,
+                    backgroundColor: '#fff', borderRadius: '50%', opacity: 0.6,
+                    transform: `translate(${mousePos.x * star.speed}px, ${mousePos.y * star.speed}px)`,
+                    transition: 'transform 0.1s ease-out', zIndex: 1,
+                }} />
             ))}
 
-            {/* 2. 메인 콘텐츠 컨테이너 (정렬 문제 해결) */}
+            {/* 물음표들 (유영) */}
+            {QUESTION_MARK_DATA.map((q) => (
+                <div key={q.id} style={{
+                    position: 'absolute', top: q.top, left: q.left,
+                    fontSize: q.fontSize, fontWeight: 700, color: '#a855f7',
+                    opacity: q.opacity, zIndex: 2, userSelect: 'none',
+                    animation: `drift ${q.duration} infinite ease-in-out ${q.delay}`,
+                    transform: `translate(${mousePos.x * 0.5}px, ${mousePos.y * 0.5}px)`,
+                }}>?</div>
+            ))}
+
+            {/* 메인 콘텐츠 영역 (zIndex: 5) */}
             <div style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
-                zIndex: 10, position: 'relative', width: '100%'
+                zIndex: 5, // 마우스 조명(10)보다 아래에 배치해서 조명이 겹치게 함
+                position: 'relative', width: '100%',
+                // 🛠️ 마우스 이동에 따라 콘텐츠 전체가 약간씩 기울어지는 효과 (Framer 스타일)
+                transform: `rotateX(${-mousePos.y * 0.2}deg) rotateY(${mousePos.x * 0.2}deg)`,
+                transition: 'transform 0.2s ease-out'
             }}>
 
                 {/* 404 큰 글씨 (병아리 뒤에 배치) */}
@@ -103,12 +141,12 @@ const NotFound: React.FC = () => {
                     zIndex: 5, position: 'relative'
                 }}>404</h1>
 
-                {/* 병아리 (글자 앞에 배치하기 위해 위로 살짝 올림) */}
+                {/* 병아리 */}
                 <div style={{
-                    marginTop: '-50px', // 글자와 살짝 겹치게 위로 올림
+                    marginTop: '-50px',
                     marginBottom: '20px',
                     animation: 'chickSwim 8s infinite ease-in-out',
-                    zIndex: 15, position: 'relative' // zIndex를 글자(5)보다 높게!
+                    zIndex: 15, position: 'relative'
                 }}>
                     <svg width="180" height="243" viewBox="0 0 200 270" style={{ filter: 'drop-shadow(0 0 25px rgba(255, 215, 0, 0.3))' }}>
                         <defs><clipPath id="body-clip"><rect x="0" y="133" width="200" height="200" /></clipPath></defs>
