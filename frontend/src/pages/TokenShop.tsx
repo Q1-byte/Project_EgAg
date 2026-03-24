@@ -282,7 +282,10 @@ export default function TokenShop() {
                 <p style={{ margin: '6px 0 0', fontSize: 32, fontWeight: 900, color: '#5a30b0' }}>{tokenBalance}<span style={{ fontSize: 16, marginLeft: 4 }}>개</span></p>
               </div>
             )}
-            <button style={rs.btn} onClick={() => navigate('/')}>홈으로 돌아가기</button>
+            <button style={rs.btn} onClick={() => navigate('/')}
+              onMouseEnter={e => (e.currentTarget.style.filter = 'brightness(1.08)')}
+              onMouseLeave={e => (e.currentTarget.style.filter = '')}
+            >홈으로 돌아가기</button>
           </div>
         </div>
       </div>
@@ -316,7 +319,10 @@ export default function TokenShop() {
               ))}
             </div>
             <p style={{ margin: 0, fontSize: 13, color: '#aaa', textAlign: 'center' }}>입금 확인 후 영업일 1일 이내 토큰이 지급됩니다.</p>
-            <button style={rs.btn} onClick={() => navigate('/')}>홈으로 돌아가기</button>
+            <button style={rs.btn} onClick={() => navigate('/')}
+              onMouseEnter={e => (e.currentTarget.style.filter = 'brightness(1.08)')}
+              onMouseLeave={e => (e.currentTarget.style.filter = '')}
+            >홈으로 돌아가기</button>
           </div>
         </div>
       </div>
@@ -610,8 +616,10 @@ export default function TokenShop() {
             {loading ? '처리 중...' : selectedPkg ? `${selectedPkg.price.toLocaleString()}원 결제하기` : '패키지를 선택해주세요'}
           </button>
           <button
-            style={{ display: 'block', margin: '14px auto 0', background: 'none', border: 'none', color: '#bbb', fontSize: 14, cursor: 'pointer', fontWeight: 600 }}
+            style={{ display: 'block', margin: '14px auto 0', background: 'none', border: 'none', color: '#bbb', fontSize: 14, cursor: 'pointer', fontWeight: 600, transition: 'color 0.15s' }}
             onClick={() => navigate(-1)}
+            onMouseEnter={e => (e.currentTarget.style.color = '#7c3aed')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#bbb')}
           >홈으로</button>
         </div>
 

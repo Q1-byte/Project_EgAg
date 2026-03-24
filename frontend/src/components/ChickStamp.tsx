@@ -5,15 +5,17 @@ interface ChickStampProps {
   isGray?: boolean;
   withBackground?: boolean;
   bgColor?: string;
+  noFloat?: boolean;
 }
 
-const ChickStamp = ({ 
-  size = 64, 
-  isHappy = true, 
+const ChickStamp = ({
+  size = 64,
+  isHappy = true,
   isStamping = false,
   isGray = false,
   withBackground = false,
-  bgColor = '#FFD700'
+  bgColor = '#FFD700',
+  noFloat = false,
 }: ChickStampProps) => {
   const px = 0;
   const py = 0;
@@ -36,7 +38,7 @@ const ChickStamp = ({
     }}>
       <style>{`
         @keyframes chicFloat { 0%,100%{transform:translateY(0px)} 50%{transform:translateY(-2px)} }
-        .chic-stamp-svg { animation: ${isStamping ? 'none' : 'chicFloat 3s ease-in-out infinite'}; }
+        .chic-stamp-svg { animation: ${isStamping || noFloat ? 'none' : 'chicFloat 3s ease-in-out infinite'}; }
       `}</style>
 
       {/* --- 도장 배경 원형 (withBackground일 때) --- */}
@@ -55,7 +57,7 @@ const ChickStamp = ({
         style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.08))', position: 'relative', zIndex: 1 }}>
         <defs>
           <clipPath id="body-clip-stamp">
-            <rect x="0" y="133" width="200" height="200" />
+            <rect x="0" y="97" width="200" height="200" />
           </clipPath>
         </defs>
 

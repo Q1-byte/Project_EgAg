@@ -31,6 +31,10 @@ public class UserService {
     private final com.egag.common.service.CloudinaryService cloudinaryService;
 
 
+    public boolean isNicknameTaken(String nickname) {
+        return userRepository.existsByNickname(nickname);
+    }
+
     public UserProfileResponse getMe(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));

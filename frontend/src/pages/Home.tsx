@@ -2,10 +2,12 @@ import { useNavigate, Link } from 'react-router-dom'
 import { consumeToken } from '../api/canvas'
 import { useEffect, useRef, useState, useMemo } from 'react'
 import { useAuthStore } from '../stores/useAuthStore'
-import { Pencil, Layers, Ticket, Sparkles, Timer, ArrowRight, MessageCircle, ChevronUp } from 'lucide-react'
+import { Pencil, Layers, Ticket, Sparkles, Timer, ArrowRight, MessageCircle, ChevronUp, CalendarCheck } from 'lucide-react'
 import Header from '../components/Header'
 import { exploreArtworks } from '../api/artwork'
 import type { ArtworkResponse } from '../types'
+import AttendanceModal, { getAttendDismissKey } from '../components/AttendanceModal'
+import { getTodayAttendance } from '../api/user'
 
 function ArtworkCarousel() {
   const navigate = useNavigate()
@@ -141,8 +143,11 @@ function SparkleStars() {
 export default function Home() {
   const navigate = useNavigate()
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
+  const userId = useAuthStore(s => s.userId)
   const tokenBalance = useAuthStore(s => s.tokenBalance)
   const setTokenBalance = useAuthStore(s => s.setTokenBalance)
+  const [showAttendanceModal, setShowAttendanceModal] = useState(false)
+  const [hasAttendedToday, setHasAttendedToday] = useState(false)
   const featureRefs = useRef<(HTMLDivElement | null)[]>([])
   const featureSectionRef = useRef<HTMLElement | null>(null)
   const [showTop, setShowTop] = useState(false)
@@ -153,6 +158,22 @@ export default function Home() {
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+    const noShowUntil = localStorage.getItem(getAttendDismissKey(userId ?? 'guest'))
+    const isDismissed = noShowUntil && Date.now() < Number(noShowUntil)
+    if (isDismissed) return
+    getTodayAttendance()
+      .then(({ attended }) => {
+        setHasAttendedToday(attended)
+        if (!attended) setShowAttendanceModal(true)
+      })
+      .catch(() => {
+        // API 실패해도 dismiss 아니면 모달 오픈
+        setShowAttendanceModal(true)
+      })
+  }, [isAuthenticated])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -261,9 +282,6 @@ export default function Home() {
           75%  { transform:translate(-45px,35px) scale(1.03); border-radius:45% 55% 35% 65%/40% 60% 55% 45%; opacity:0.18; }
           100% { transform:translate(0,0) scale(1);      border-radius:70% 30% 50% 50%/40% 60% 40% 60%; opacity:0.15; }
         }
-        @keyframes scrollDot { 0%{transform:translateY(0);opacity:1} 80%{transform:translateY(14px);opacity:0} 100%{transform:translateY(0);opacity:0} }
-        .scroll-dot { width:3px; height:5px; border-radius:2px; background:rgba(180,168,200,0.7); animation:scrollDot 1.8s ease infinite; }
-        .scroll-hint { animation: float2 3s ease-in-out infinite; }
         .footer-policy-link { color: #7a6a9a; text-decoration: none; transition: color 0.2s, text-decoration 0.2s; }
         .footer-policy-link:hover { color: #c47a8a; text-decoration: underline; }
         .card-canvas:hover { transform: translateY(-6px) scale(1.02); box-shadow: 0 20px 60px rgba(196,122,138,0.25) !important; }
@@ -276,6 +294,19 @@ export default function Home() {
         .profile-avatar:hover { filter: brightness(1.1); transform: scale(1.06); }
         .fab-inquiry { transition: box-shadow 0.2s, transform 0.15s; }
         .fab-inquiry:hover { transform: scale(1.06); box-shadow: 0 8px 32px rgba(107,130,160,0.4) !important; }
+        @keyframes attendanceWiggle {
+          0%, 100% { transform: rotate(0deg); }
+          4%       { transform: rotate(-7deg); }
+          8%       { transform: rotate(7deg); }
+          12%      { transform: rotate(-5deg); }
+          16%      { transform: rotate(5deg); }
+          20%      { transform: rotate(-2deg); }
+          24%      { transform: rotate(2deg); }
+          28%      { transform: rotate(0deg); }
+        }
+        .fab-attendance { transition: box-shadow 0.2s; }
+        .fab-attendance:hover { transform: scale(1.06) !important; box-shadow: 0 8px 32px rgba(107,130,160,0.4) !important; animation: none !important; }
+        .fab-attendance-pulse { animation: attendanceWiggle 3.5s ease-in-out infinite; animation-delay: 1.5s; }
         .fab-top { transition: box-shadow 0.2s, transform 0.3s, opacity 0.3s; }
         .fab-top:hover { transform: translateY(-2px) scale(1.08) !important; box-shadow: 0 8px 32px rgba(107,130,160,0.35) !important; }
         .star-field {
@@ -387,15 +418,9 @@ export default function Home() {
         <h1 className="egag-main-title" style={{ ...s.mainTitle, position: 'relative', zIndex: 2 }}>무엇을 그려볼까요?</h1>
         <p className="egag-main-desc" style={{ ...s.mainDesc, position: 'relative', zIndex: 2 }}>AI와 함께하는 3가지 그림 놀이, 지금 바로 시작해봐요</p>
 
-        {/* 스크롤 유도 */}
-        <div className="scroll-hint" style={{ margin: '4px 0 28px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, position: 'relative', zIndex: 2 }}>
-          <span style={{ fontSize: 10, letterSpacing: 4, color: '#c0b8d0', textTransform: 'uppercase', fontWeight: 700 }}>scroll</span>
-          <div style={{ width: 16, height: 26, borderRadius: 8, border: '1.5px solid rgba(180,168,200,0.5)', display: 'flex', justifyContent: 'center', paddingTop: 4, boxSizing: 'border-box' }}>
-            <div className="scroll-dot" />
-          </div>
+        <div style={{ marginTop: 40 }}>
+          <ArtworkCarousel />
         </div>
-
-        <ArtworkCarousel />
 
       </main>
 
@@ -526,7 +551,7 @@ export default function Home() {
         className="fab-top"
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         style={{
-          position: 'fixed', bottom: 100, right: 32,
+          position: 'fixed', bottom: 152, right: 32,
           width: 48, height: 48, borderRadius: '50%',
           background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(16px)',
           border: '1.5px solid rgba(107,130,160,0.25)',
@@ -541,6 +566,38 @@ export default function Home() {
       >
         <ChevronUp size={20} color="#6B82A0" strokeWidth={2.5} />
       </button>
+
+      {/* 출석체크 모달 */}
+      {showAttendanceModal && (
+        <AttendanceModal
+          onClose={() => setShowAttendanceModal(false)}
+          onSuccess={() => setHasAttendedToday(true)}
+        />
+      )}
+
+      {/* 플로팅 출석체크 버튼 */}
+      {isAuthenticated && (
+        <button
+          className={`fab-attendance${hasAttendedToday ? '' : ' fab-attendance-pulse'}`}
+          onClick={() => setShowAttendanceModal(true)}
+          style={{
+            position: 'fixed', bottom: 92, right: 32,
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '14px 22px', borderRadius: 100,
+            background: 'rgba(255,255,255,0.85)',
+            backdropFilter: 'blur(16px)',
+            border: '1.5px solid rgba(107,130,160,0.25)',
+            boxShadow: '0 4px 24px rgba(107,130,160,0.2)',
+            fontSize: 14, fontWeight: 700,
+            color: '#4a5a7a',
+            cursor: 'pointer', zIndex: 200,
+            transition: 'all 0.2s',
+          }}
+        >
+          <CalendarCheck size={18} color="#6B82A0" />
+          출석체크
+        </button>
+      )}
 
       {/* 플로팅 문의 버튼 */}
       <button

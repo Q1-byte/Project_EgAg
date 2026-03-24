@@ -77,7 +77,7 @@ function AnimatedEye({ passwordFocused, emailFocused }: { passwordFocused: boole
         @keyframes chicFloat { 0%,100%{transform:translateY(0px)} 50%{transform:translateY(-8px)} }
         .chic-svg { animation: chicFloat 3.6s ease-in-out infinite; }
       `}</style>
-      <svg ref={svgRef} width="240" height="324" viewBox="0 0 200 270" className="chic-svg"
+      <svg ref={svgRef} width="270" height="365" viewBox="0 0 200 270" className="chic-svg"
         style={{ filter: 'drop-shadow(0 14px 28px rgba(0,0,0,0.15))' }}>
         <defs>
           <clipPath id="body-clip">
@@ -243,6 +243,7 @@ export default function Login() {
         }
       `}</style>
 
+      <div style={s.layout}>
       {/* 왼쪽 — 캐릭터 패널 */}
       <div className="login-left" style={{ ...s.left, position: 'relative' }}>
 
@@ -275,11 +276,13 @@ export default function Login() {
           <rect width="100%" height="100%" fill="url(#egg-star-pattern)" />
         </svg>
 
-        <div style={{ ...s.logo, position: 'absolute', top: 150, zIndex: 10 }} onClick={() => navigate('/')}>
-          <img src="/Egag_logo-removebg.png" alt="EgAg" style={{ height: 67 }} />
-        </div>
-        <div style={{ position: 'relative', top: -95, zIndex: 1 }}>
-          <AnimatedEye passwordFocused={passwordFocused} emailFocused={emailFocused} />
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, marginTop: 70, marginBottom: 40 }}>
+          <div style={s.logo} onClick={() => navigate('/')}>
+            <img src="/Egag_logo-removebg.png" alt="EgAg" style={{ height: 96 }} />
+          </div>
+          <div style={{ marginTop: -40 }}>
+            <AnimatedEye passwordFocused={passwordFocused} emailFocused={emailFocused} />
+          </div>
         </div>
       </div>
 
@@ -434,6 +437,7 @@ export default function Login() {
         </div>
         </div>
       </div>
+      </div>
     </div>
   )
 }
@@ -441,11 +445,18 @@ export default function Login() {
 // ─── 스타일 ──────────────────────────────────────────────
 const s: Record<string, React.CSSProperties> = {
   bg: {
-    minHeight: '100vh', display: 'flex',
-    background: '#f5f5f5',
+    minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: 'linear-gradient(135deg, #EFF6FF 0%, #F0FDF4 100%)',
+    padding: '32px 16px',
+  },
+  layout: {
+    display: 'flex', width: '100%', maxWidth: 960,
+    borderRadius: 20, overflow: 'hidden',
+    boxShadow: '0 8px 40px rgba(0,0,0,0.13)',
+    minHeight: 620,
   },
   left: {
-    flex: 1, display: 'flex', flexDirection: 'column',
+    flex: '0 0 420px', display: 'flex', flexDirection: 'column',
     alignItems: 'center', justifyContent: 'center',
     padding: '32px', gap: 4,
   },
@@ -453,7 +464,6 @@ const s: Record<string, React.CSSProperties> = {
     flex: 1, display: 'flex', flexDirection: 'column',
     alignItems: 'center', justifyContent: 'center',
     background: '#fff', padding: '52px 44px',
-    boxShadow: '-4px 0 32px rgba(0,0,0,0.06)',
   },
   leftTitle: {
     margin: '8px 0 4px', fontSize: 26, fontWeight: 800,

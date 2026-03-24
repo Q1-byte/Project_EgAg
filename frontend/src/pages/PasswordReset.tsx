@@ -70,6 +70,10 @@ export default function PasswordReset() {
   if (phase === 'sent') {
     return (
       <div style={s.bg}>
+        <style>{`
+          .pr-btn-primary:hover { opacity: 0.88; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59,130,246,0.35); }
+          .pr-btn-primary:active { transform: translateY(0); }
+        `}</style>
         <div style={s.card}>
           <div style={s.logo} onClick={() => navigate('/')} role="button">
             <img src="/Egag_logo-removebg.png" alt="EgAg" style={{ height: 64, marginTop: 40, marginBottom: 20 }} />
@@ -84,7 +88,7 @@ export default function PasswordReset() {
             메일이 오지 않는 경우 스팸함을 확인하거나<br />
             잠시 후 다시 시도해주세요.
           </p>
-          <button style={s.btnPrimary} onClick={() => navigate('/login')}>
+          <button className="pr-btn-primary" style={{ ...s.btnPrimary, flex: 'unset', width: '100%' }} onClick={() => navigate('/login')}>
             로그인으로 돌아가기
           </button>
         </div>
@@ -95,6 +99,14 @@ export default function PasswordReset() {
   // ─── 입력 폼 화면 ───────────────────────────────────────
   return (
     <div style={s.bg}>
+      <style>{`
+        .pr-input:focus { border-color: #6B82A0 !important; box-shadow: 0 0 0 3px rgba(107,130,160,0.12); }
+        .pr-input.error:focus { border-color: #EF4444 !important; box-shadow: 0 0 0 3px rgba(239,68,68,0.1); }
+        .pr-btn-secondary:hover { background: #f5f5f7 !important; color: #374151 !important; }
+        .pr-btn-primary:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59,130,246,0.35); }
+        .pr-btn-primary:active { transform: translateY(0); }
+        .pr-link:hover { color: #c47a8a !important; text-decoration: underline !important; }
+      `}</style>
       <div style={s.card}>
         <div style={s.logo} onClick={() => navigate('/')} role="button">
           <img src="/Egag_logo-removebg.png" alt="EgAg" style={{ height: 64, marginTop: 40, marginBottom: 20 }} />
@@ -137,10 +149,11 @@ export default function PasswordReset() {
           </div>
 
           <div style={s.btnRow}>
-            <button style={s.btnSecondary} type="button" onClick={() => navigate('/')}>
-              ← 메인으로
+            <button className="pr-btn-secondary" style={s.btnSecondary} type="button" onClick={() => navigate('/')}>
+              취소
             </button>
             <button
+              className="pr-btn-primary"
               style={{ ...s.btnPrimary, opacity: loading ? 0.7 : 1 }}
               type="submit" disabled={loading}
             >
@@ -151,7 +164,7 @@ export default function PasswordReset() {
 
         <p style={s.bottomText}>
           비밀번호가 기억나셨나요?{' '}
-          <Link to="/login" style={s.link}>로그인</Link>
+          <Link to="/login" className="pr-link" style={s.link}>로그인</Link>
         </p>
       </div>
     </div>
@@ -195,17 +208,18 @@ const s: Record<string, React.CSSProperties> = {
   btnRow: { display: 'flex', gap: 10, marginTop: 4 },
   btnSecondary: {
     flex: '0 0 auto', padding: '13px 20px', fontSize: 15, fontWeight: 600,
-    background: 'linear-gradient(135deg, #BAE6FD, #E0F2FE)', color: '#0369A1',
-    border: '1px solid #7DD3FC', borderRadius: 10, cursor: 'pointer',
-    whiteSpace: 'nowrap' as const,
+    background: '#fff', color: '#6b7280',
+    border: '1.5px solid #e5e7eb', borderRadius: 10, cursor: 'pointer',
+    whiteSpace: 'nowrap' as const, transition: 'all 0.15s',
   },
   btnPrimary: {
     flex: 1, padding: '13px', fontSize: 16, fontWeight: 700,
     background: 'linear-gradient(135deg, #3B82F6, #6366F1)',
     color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer',
+    transition: 'all 0.18s',
   },
   bottomText: { fontSize: 14, color: '#64748B', marginTop: 20, textAlign: 'center' as const },
-  link: { color: '#3B82F6', fontWeight: 600, textDecoration: 'none' },
+  link: { color: '#6B82A0', fontWeight: 600, textDecoration: 'none', transition: 'color 0.15s' },
   sentIcon: { fontSize: 56, marginBottom: 56 },
   sentDesc: {
     fontSize: 15, color: '#334155', textAlign: 'center' as const,

@@ -107,6 +107,11 @@ export const deleteArtwork = (id: string) =>
 export const getPublicArtworks = () =>
   client.get<ArtworkSummary[]>('/gallery/public').then(res => res.data)
 
+export const checkNicknameAvailable = async (nickname: string): Promise<boolean> => {
+  const response = await client.get('/users/check-nickname', { params: { nickname } })
+  return response.data.available
+}
+
 // --- 출석체크 API ---
 export const getTodayAttendance = async (): Promise<{ attended: boolean }> => {
   const response = await client.get('/attendance/today')
@@ -120,5 +125,15 @@ export const checkInAttendance = async (): Promise<{ message: string }> => {
 
 export const getAttendanceHistory = async (): Promise<string[]> => {
   const response = await client.get('/attendance/history')
+  return response.data
+}
+
+export const getClaimedBonuses = async (): Promise<number[]> => {
+  const response = await client.get('/attendance/claimed-bonuses')
+  return response.data
+}
+
+export const claimStreakBonus = async (days: number): Promise<{ bonus: number; message: string }> => {
+  const response = await client.post(`/attendance/claim-streak?days=${days}`)
   return response.data
 }

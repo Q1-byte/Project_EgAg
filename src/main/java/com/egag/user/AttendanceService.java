@@ -21,6 +21,10 @@ public class AttendanceService {
 
     private final AttendanceRepository attendanceRepository;
     private final UserRepository userRepository;
+    private final StreakClaimRepository streakClaimRepository;
+
+    private static final int[] STREAK_DAYS    = {3, 7, 30};
+    private static final int[] STREAK_BONUSES = {1, 3, 10};
 
     @Transactional
     public void checkIn(String userId) {
@@ -80,5 +84,51 @@ public class AttendanceService {
     public List<Attendance> getHistory(String userId) {
         if (userId == null) return List.of();
         return attendanceRepository.findByUserIdOrderByAttendanceDateDesc(userId);
+    }
+
+    public List<Integer> getClaimedDays(String userId) {
+        return streakClaimRepository.findByUserId(userId)
+                .stream().map(StreakClaim::getDays).toList();
+    }
+
+    @Transactional
+    public int claimStreakBonus(String userId, int days) {
+        // 유효한 미션인지 확인
+        int bonus = -1;
+        for (int i = 0; i < STREAK_DAYS.length; i++) {
+            if (STREAK_DAYS[i] == days) { bonus = STREAK_BONUSES[i]; break; }
+        }
+        if (bonus < 0) throw new CustomException(HttpStatus.BAD_REQUEST, "INVALID_DAYS", "잘못된 미션입니다.");
+
+        // 이미 수령했는지 확인
+        if (streakClaimRepository.existsByUserIdAndDays(userId, days))
+            throw new CustomException(HttpStatus.BAD_REQUEST, "ALREADY_CLAIMED", "이미 수령한 보너스예요!");
+
+        // 연속 일수 계산
+        List<Attendance> history = attendanceRepository.findByUserIdOrderByAttendanceDateDesc(userId);
+        int streak = 0;
+        ZoneId kst = ZoneId.of("Asia/Seoul");
+        LocalDate cursor = LocalDate.now(kst);
+        for (Attendance a : history) {
+            if (a.getAttendanceDate().equals(cursor)) { streak++; cursor = cursor.minusDays(1); }
+            else break;
+        }
+        if (streak < days)
+            throw new CustomException(HttpStatus.BAD_REQUEST, "NOT_ENOUGH_STREAK", "아직 연속 출석 일수가 부족해요.");
+
+        // 토큰 지급 및 수령 기록 저장
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "사용자를 찾을 수 없습니다."));
+        user.addToken(bonus);
+        userRepository.save(user);
+
+        streakClaimRepository.save(StreakClaim.builder()
+                .id(UUID.randomUUID().toString())
+                .user(user)
+                .days(days)
+                .build());
+
+        log.info("🎁 연속 출석 보너스 지급: userId={}, days={}, bonus={}", userId, days, bonus);
+        return bonus;
     }
 }

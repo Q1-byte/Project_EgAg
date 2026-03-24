@@ -291,42 +291,6 @@ export default function Header({ hideOnScroll = false }: HeaderProps) {
                 <Ticket size={13} style={{ marginRight: 4, verticalAlign: 'middle' }} />{tokenBalance}개
               </span>
 
-              {/* 출석체크 병아리 도장 */}
-              <div 
-                onClick={() => setShowAttendanceModal(true)}
-                style={{
-                  position: 'relative',
-                  width: 44, height: 44,
-                  borderRadius: 16,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer',
-                  background: hasAttendedToday ? 'rgba(107, 130, 160, 0.05)' : 'rgba(255, 215, 0, 0.1)',
-                  border: hasAttendedToday ? '1px solid rgba(138, 138, 170, 0.1)' : '1px solid rgba(255, 215, 0, 0.3)',
-                  transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                }}
-                className={hasAttendedToday ? '' : 'stamp-wait'}
-                onMouseEnter={e => { 
-                  (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.1)';
-                  (e.currentTarget as HTMLDivElement).style.background = 'rgba(255, 215, 0, 0.2)';
-                }}
-                onMouseLeave={e => { 
-                  (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)';
-                  (e.currentTarget as HTMLDivElement).style.background = hasAttendedToday ? 'rgba(107, 130, 160, 0.05)' : 'rgba(255, 215, 0, 0.1)';
-                }}
-              >
-                <div style={{ position: 'relative', top: -5 }}>
-                  <ChickStamp size={32} isHappy={hasAttendedToday} isGray={hasAttendedToday} />
-                </div>
-                {!hasAttendedToday && (
-                  <span style={{
-                    position: 'absolute', top: -2, right: -2,
-                    width: 12, height: 12, borderRadius: 6,
-                    background: '#FF5C8D', border: '2px solid #fff',
-                    animation: 'pulse 1.5s infinite'
-                  }} />
-                )}
-              </div>
-
               {/* 알림 종 아이콘 */}
               <div 
                 onClick={() => navigate('/notifications')}
@@ -412,6 +376,7 @@ export default function Header({ hideOnScroll = false }: HeaderProps) {
                   </div>
                   {[
                     { label: '마이페이지', onClick: () => { setShowProfileMenu(false); navigate('/mypage') } },
+                    { label: '출석체크', onClick: () => { setShowProfileMenu(false); setShowAttendanceModal(true) } },
                     { label: '알림', onClick: () => { setShowProfileMenu(false); navigate('/notifications') } },
                     ...(role === 'ADMIN' ? [{ label: '관리자 페이지', onClick: () => { setShowProfileMenu(false); navigate('/admin') } }] : []),
                     { label: '로그아웃', onClick: () => { setShowProfileMenu(false); handleLogout() }, danger: true },

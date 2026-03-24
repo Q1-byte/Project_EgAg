@@ -90,6 +90,13 @@ public class UserController {
         return userService.getUserArtworks(principal.getUserId(), false, status, principal.getUserId());
     }
 
+    /** 닉네임 중복 체크 */
+    @GetMapping("/check-nickname")
+    public ResponseEntity<?> checkNickname(@RequestParam String nickname) {
+        boolean available = !userService.isNicknameTaken(nickname);
+        return ResponseEntity.ok(Map.of("available", available));
+    }
+
     /** 팔로우 토글 (상준 파트) */
     @PostMapping("/{id}/follow")
     public void toggleFollow(@PathVariable String id, @AuthenticationPrincipal PrincipalDetails principal) {

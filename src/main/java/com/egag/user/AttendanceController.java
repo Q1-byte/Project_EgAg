@@ -40,4 +40,19 @@ public class AttendanceController {
                 .collect(Collectors.toList());
         return ResponseEntity.ok(dates);
     }
+
+    @GetMapping("/claimed-bonuses")
+    public ResponseEntity<?> getClaimedBonuses(@AuthenticationPrincipal PrincipalDetails principal) {
+        if (principal == null) return ResponseEntity.status(401).build();
+        return ResponseEntity.ok(attendanceService.getClaimedDays(principal.getUserId()));
+    }
+
+    @PostMapping("/claim-streak")
+    public ResponseEntity<?> claimStreak(
+            @AuthenticationPrincipal PrincipalDetails principal,
+            @RequestParam int days) {
+        if (principal == null) return ResponseEntity.status(401).build();
+        int bonus = attendanceService.claimStreakBonus(principal.getUserId(), days);
+        return ResponseEntity.ok(Map.of("bonus", bonus, "message", "🎉 보너스 " + bonus + " 토큰이 지급됐어요!"));
+    }
 }

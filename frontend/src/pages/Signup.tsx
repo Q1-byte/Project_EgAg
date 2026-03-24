@@ -2,6 +2,7 @@ import axios from 'axios';
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { signup } from '../api/auth'
+import { checkNicknameAvailable } from '../api/user'
 import { useAuthStore } from '../stores/useAuthStore'
 import { AlertTriangle } from 'lucide-react'
 
@@ -38,6 +39,8 @@ export default function Signup() {
   })
   const [errors, setErrors] = useState<Errors>({})
   const [loading, setLoading] = useState(false)
+  const [nicknameChecked, setNicknameChecked] = useState<boolean | null>(null)
+  const [nicknameChecking, setNicknameChecking] = useState(false)
   const [privacyOpen, setPrivacyOpen] = useState(false)
   const [termsOpen, setTermsOpen] = useState(false)
   const [alertMessages, setAlertMessages] = useState<string[]>([])
@@ -46,6 +49,35 @@ export default function Signup() {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value
     setForm(prev => ({ ...prev, [key]: value }))
     setErrors(prev => ({ ...prev, [key]: undefined }))
+  }
+
+  const handleNicknameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\s/g, '').slice(0, 12)
+    setForm(prev => ({ ...prev, nickname: value }))
+    setErrors(prev => ({ ...prev, nickname: undefined }))
+    setNicknameChecked(null)
+  }
+
+  const handleCheckNickname = async () => {
+    if (!form.nickname.trim()) return
+    setNicknameChecking(true)
+    try {
+      const available = await checkNicknameAvailable(form.nickname.trim())
+      setNicknameChecked(available)
+    } catch {
+      setNicknameChecked(null)
+    } finally {
+      setNicknameChecking(false)
+    }
+  }
+
+  const formatPhone = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = e.target.value.replace(/\D/g, '').slice(0, 11)
+    let formatted = digits
+    if (digits.length > 7) formatted = `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`
+    else if (digits.length > 3) formatted = `${digits.slice(0, 3)}-${digits.slice(3)}`
+    setForm(prev => ({ ...prev, phone: formatted }))
+    setErrors(prev => ({ ...prev, phone: undefined }))
   }
 
   const validate = (): Errors => {
@@ -129,6 +161,19 @@ export default function Signup() {
 
   return (
     <div style={s.bg}>
+      <style>{`
+        .signup-input:focus { border-color: #6B82A0 !important; box-shadow: 0 0 0 3px rgba(107,130,160,0.12); }
+        .signup-input.error:focus { border-color: #e53e3e !important; box-shadow: 0 0 0 3px rgba(229,62,62,0.1); }
+        .signup-input.ok:focus { border-color: #22c55e !important; box-shadow: 0 0 0 3px rgba(34,197,94,0.1); }
+        .signup-check-btn:hover:not(:disabled) { border-color: #6B82A0 !important; color: #6B82A0 !important; background: #f0f4f8 !important; }
+        .signup-check-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .signup-btn-primary:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(107,130,160,0.35); }
+        .signup-btn-primary:active { transform: translateY(0); }
+        .signup-btn-secondary:hover { background: #f5f5f7 !important; color: #374151 !important; }
+        .signup-toggle-btn:hover { color: #6B82A0 !important; }
+        .signup-login-link:hover { color: #c47a8a !important; text-decoration: underline !important; }
+      `}</style>
+
       {/* 미입력 안내 모달 */}
       {alertMessages.length > 0 && (
         <div style={s.modalOverlay} onClick={() => setAlertMessages([])}>
@@ -144,15 +189,24 @@ export default function Signup() {
         </div>
       )}
 
-      <div style={s.card}>
-        {/* 로고 */}
-        <div style={s.logo} onClick={() => navigate('/')}>
-          <img src="/Egag_logo-removebg.png" alt="EgAg" style={{ height: 16 }} />
+      <div style={s.layout}>
+        {/* 왼쪽 브랜딩 패널 */}
+        <div style={s.panel}>
+          <div style={s.panelInner}>
+            <img src="/Egag_logo-removebg.png" alt="EgAg" style={{ height: 80, marginBottom: 48 }} />
+            <h2 style={{ margin: '0 0 20px', fontSize: 28, fontWeight: 800, letterSpacing: -0.5, color: '#fff' }}>창작의 공간,<br />이그에그</h2>
+            <p style={{ margin: 0, fontSize: 15, color: 'rgba(255,255,255,0.75)', lineHeight: 1.7 }}>그림을 그리고, 공유하고,<br />영감을 나눠보세요.</p>
+          </div>
         </div>
 
-        <h1 style={s.title}>회원가입</h1>
+        {/* 오른쪽 폼 패널 */}
+        <div style={s.card}>
+          <div style={s.titleArea}>
+            <h1 style={s.title}>회원가입</h1>
+            <p style={s.subtitle}>계정을 만들고 창작을 시작하세요</p>
+          </div>
 
-        {errors.general && <div style={s.errorBanner}>{errors.general}</div>}
+          {errors.general && <div style={s.errorBanner}>{errors.general}</div>}
 
         <form onSubmit={handleSubmit} noValidate style={s.form}>
 
@@ -160,6 +214,7 @@ export default function Signup() {
           <div style={s.field}>
             <label style={s.label}>이름 <span style={s.required}>*</span></label>
             <input
+              className={`signup-input${errors.name ? ' error' : ''}`}
               style={{ ...s.input, ...(errors.name ? s.inputError : {}) }}
               type="text" placeholder="홍길동" value={form.name}
               onChange={set('name')} maxLength={20}
@@ -170,11 +225,27 @@ export default function Signup() {
           {/* 별명 */}
           <div style={s.field}>
             <label style={s.label}>별명 <span style={s.required}>*</span></label>
-            <input
-              style={{ ...s.input, ...(errors.nickname ? s.inputError : {}) }}
-              type="text" placeholder="2~12자" value={form.nickname}
-              onChange={set('nickname')} maxLength={12}
-            />
+            <div style={{ display: 'flex', gap: 8, width: '100%' }}>
+              <input
+                className={`signup-input${errors.nickname ? ' error' : nicknameChecked === true ? ' ok' : nicknameChecked === false ? ' error' : ''}`}
+                style={{ ...s.input, ...(errors.nickname ? s.inputError : nicknameChecked === true ? { borderColor: '#22c55e' } : nicknameChecked === false ? { borderColor: '#ef4444' } : {}), flex: 1, width: 0 }}
+                type="text" placeholder="2~12자" value={form.nickname}
+                onChange={handleNicknameChange} maxLength={12}
+              />
+              <button type="button" className="signup-check-btn" onClick={handleCheckNickname}
+                disabled={nicknameChecking || !form.nickname.trim()}
+                style={{
+                  padding: '0 16px', borderRadius: 10, border: '1.5px solid #d1d5db',
+                  background: '#f9fafb', fontSize: 13, fontWeight: 700, color: '#6b7280',
+                  cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+                  transition: 'all 0.15s',
+                }}
+              >
+                {nicknameChecking ? '확인 중...' : '중복확인'}
+              </button>
+            </div>
+            {nicknameChecked === true && <span style={{ fontSize: 12, color: '#22c55e', fontWeight: 600 }}>✓ 사용 가능한 별명이에요!</span>}
+            {nicknameChecked === false && <span style={{ fontSize: 12, color: '#ef4444', fontWeight: 600 }}>이미 사용 중인 별명이에요.</span>}
             {errors.nickname && <span style={s.fieldError}>{errors.nickname}</span>}
           </div>
 
@@ -182,6 +253,7 @@ export default function Signup() {
           <div style={s.field}>
             <label style={s.label}>이메일 주소 <span style={s.required}>*</span></label>
             <input
+              className={`signup-input${errors.email ? ' error' : ''}`}
               style={{ ...s.input, ...(errors.email ? s.inputError : {}) }}
               type="email" placeholder="example@email.com" value={form.email}
               onChange={set('email')} autoComplete="email"
@@ -193,9 +265,10 @@ export default function Signup() {
           <div style={s.field}>
             <label style={s.label}>전화번호 <span style={s.required}>*</span></label>
             <input
+              className={`signup-input${errors.phone ? ' error' : ''}`}
               style={{ ...s.input, ...(errors.phone ? s.inputError : {}) }}
               type="tel" placeholder="010-1234-5678" value={form.phone}
-              onChange={set('phone')} maxLength={13}
+              onChange={formatPhone} maxLength={13}
             />
             {errors.phone && <span style={s.fieldError}>{errors.phone}</span>}
           </div>
@@ -204,6 +277,7 @@ export default function Signup() {
           <div style={s.field}>
             <label style={s.label}>비밀번호 <span style={s.required}>*</span></label>
             <input
+              className={`signup-input${errors.password ? ' error' : ''}`}
               style={{ ...s.input, ...(errors.password ? s.inputError : {}) }}
               type="password" placeholder="영문+숫자 8자 이상" value={form.password}
               onChange={set('password')} autoComplete="new-password"
@@ -215,6 +289,7 @@ export default function Signup() {
           <div style={s.field}>
             <label style={s.label}>비밀번호 확인 <span style={s.required}>*</span></label>
             <input
+              className={`signup-input${errors.passwordConfirm ? ' error' : ''}`}
               style={{ ...s.input, ...(errors.passwordConfirm ? s.inputError : {}) }}
               type="password" placeholder="비밀번호를 다시 입력하세요" value={form.passwordConfirm}
               onChange={set('passwordConfirm')} autoComplete="new-password"
@@ -235,7 +310,7 @@ export default function Signup() {
                   <span style={s.required}> *</span>
                 </span>
               </label>
-              <button type="button" style={s.toggleBtn} onClick={() => setPrivacyOpen(v => !v)}>
+              <button type="button" className="signup-toggle-btn" style={s.toggleBtn} onClick={() => setPrivacyOpen(v => !v)}>
                 {privacyOpen ? '접기 ▲' : '내용 보기 ▼'}
               </button>
             </div>
@@ -332,13 +407,15 @@ export default function Signup() {
 
           <div style={s.btnRow}>
             <button
+              className="signup-btn-secondary"
               style={s.btnSecondary}
               type="button"
               onClick={() => navigate('/')}
             >
-              ← 메인으로
+              취소
             </button>
             <button
+              className="signup-btn-primary"
               style={{ ...s.btnPrimary, opacity: loading ? 0.7 : 1 }}
               type="submit" disabled={loading}
             >
@@ -349,12 +426,9 @@ export default function Signup() {
 
         <p style={s.loginText}>
           이미 계정이 있으신가요?{' '}
-          <Link to="/login" style={s.loginLink}>로그인</Link>
+          <Link to="/login" className="signup-login-link" style={s.loginLink}>로그인</Link>
         </p>
-
-        <button style={s.btnHome} onClick={() => navigate('/')}>
-          메인으로 돌아가기
-        </button>
+        </div>
       </div>
     </div>
   )
@@ -364,103 +438,113 @@ export default function Signup() {
 const s: Record<string, React.CSSProperties> = {
   bg: {
     minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-    background: 'linear-gradient(135deg, #EFF6FF 0%, #F0FDF4 100%)',
-    padding: '32px 16px',
+    background: 'linear-gradient(135deg, #EFF6FF 0%, #F0FDF4 100%)', padding: '32px 16px',
+  },
+  layout: {
+    display: 'flex', width: '100%', maxWidth: 900,
+    borderRadius: 20, overflow: 'hidden',
+    boxShadow: '0 8px 40px rgba(0,0,0,0.12)',
+    minHeight: 600,
+  },
+  panel: {
+    flex: '0 0 340px',
+    background: 'linear-gradient(160deg, #6B82A0 0%, #c47a8a 100%)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    padding: '48px 40px', position: 'relative', overflow: 'hidden',
+  },
+  panelInner: {
+    position: 'relative', zIndex: 1,
+    display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center',
   },
   card: {
-    background: '#fff', borderRadius: 24, padding: '44px 48px',
-    boxShadow: '0 8px 32px rgba(59,130,246,0.10)',
-    width: '100%', maxWidth: 480,
+    flex: 1, background: '#fff', padding: '44px 48px',
     display: 'flex', flexDirection: 'column', alignItems: 'center',
+    overflowY: 'auto' as const,
   },
-  logo: { display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 28 },
-  logoIcon: { fontSize: 24 },
-  logoText: { fontSize: 20, fontWeight: 700, color: '#1D4ED8', letterSpacing: -0.5 },
-  title: { fontSize: 24, fontWeight: 800, color: '#0F172A', margin: '0 0 24px', textAlign: 'center', width: '100%', letterSpacing: 2 },
+  titleArea: { width: '100%', marginBottom: 28, textAlign: 'left' as const },
+  title: { fontSize: 24, fontWeight: 800, color: '#111827', margin: '0 0 6px', letterSpacing: -0.5 },
+  subtitle: { fontSize: 14, color: '#9ca3af', margin: 0 },
   errorBanner: {
-    width: '100%', background: '#FEF2F2', border: '1px solid #FECACA',
-    borderRadius: 10, padding: '12px 16px', fontSize: 14, color: '#DC2626', marginBottom: 16,
+    width: '100%', background: '#fff0f0', border: '1px solid #ffd0d0',
+    borderRadius: 10, padding: '12px 16px', fontSize: 14, color: '#e53e3e', marginBottom: 16,
   },
-  form: { width: '100%', display: 'flex', flexDirection: 'column', gap: 20 },
+  form: { width: '100%', display: 'flex', flexDirection: 'column', gap: 14 },
   field: { display: 'flex', flexDirection: 'column', gap: 5, alignItems: 'flex-start' },
-  label: { fontSize: 14, fontWeight: 600, color: '#374151' },
-  required: { color: '#EF4444' },
+  label: { fontSize: 13, fontWeight: 600, color: '#374151', letterSpacing: -0.1 },
+  required: { color: '#e53e3e' },
   input: {
-    padding: '11px 14px', fontSize: 15, border: '2px solid #E2E8F0',
+    padding: '11px 14px', fontSize: 15,
+    background: '#fafafa',
+    border: '1.5px solid #e5e7eb',
+    color: '#111',
     borderRadius: 10, outline: 'none', width: '100%', boxSizing: 'border-box' as const,
-    transition: 'border-color 0.15s',
+    transition: 'border-color 0.15s, box-shadow 0.15s',
   },
-  inputError: { borderColor: '#EF4444' },
-  fieldError: { fontSize: 13, color: '#EF4444' },
+  inputError: { borderColor: '#e53e3e' },
+  fieldError: { fontSize: 12, color: '#e53e3e' },
   privacyBox: {
-    width: '100%', background: '#F8FAFC', border: '1px solid #E2E8F0',
-    borderRadius: 12, padding: '14px 16px',
+    width: '100%', background: '#f9fafb', border: '1.5px solid #e5e7eb',
+    borderRadius: 12, padding: '12px 16px',
     display: 'flex', flexDirection: 'column', gap: 10,
     boxSizing: 'border-box' as const,
   },
   privacyHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
   checkLabel: { display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' },
-  checkbox: { width: 18, height: 18, accentColor: '#3B82F6', cursor: 'pointer', flexShrink: 0 },
-  checkText: { fontSize: 14, color: '#1E293B' },
+  checkbox: { width: 17, height: 17, accentColor: '#6B82A0', cursor: 'pointer', flexShrink: 0 },
+  checkText: { fontSize: 14, color: '#374151' },
   toggleBtn: {
-    fontSize: 12, color: '#64748B', background: 'none',
+    fontSize: 12, color: '#9ca3af', background: 'none',
     border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' as const, flexShrink: 0,
   },
   privacyContent: {
-    borderTop: '1px solid #E2E8F0', paddingTop: 12,
+    borderTop: '1px solid #e5e7eb', paddingTop: 12,
     display: 'flex', flexDirection: 'column', gap: 10,
   },
   table: { width: '100%', borderCollapse: 'collapse' as const, fontSize: 13 },
   th: {
-    background: '#EFF6FF', color: '#1D4ED8', fontWeight: 700,
-    padding: '8px 10px', border: '1px solid #BFDBFE', textAlign: 'center' as const,
+    background: '#f0f4f8', color: '#6B82A0', fontWeight: 700,
+    padding: '8px 10px', border: '1px solid #e5e7eb', textAlign: 'center' as const,
   },
   td: {
-    padding: '8px 10px', border: '1px solid #E2E8F0',
-    color: '#374151', textAlign: 'center' as const, verticalAlign: 'middle' as const,
+    padding: '8px 10px', border: '1px solid #f3f4f6',
+    color: '#6b7280', textAlign: 'center' as const, verticalAlign: 'middle' as const,
   },
-  privacyNote: { fontSize: 12, color: '#94A3B8', margin: 0 },
+  privacyNote: { fontSize: 12, color: '#9ca3af', margin: 0 },
   termsText: { display: 'flex', flexDirection: 'column' as const, gap: 6 },
-  termsTitle: { fontSize: 14, fontWeight: 800, color: '#0F172A', margin: 0 },
-  termsDesc: { fontSize: 13, color: '#475569', margin: 0, lineHeight: 1.6 },
-  termsSectionTitle: { fontSize: 13, fontWeight: 700, color: '#1D4ED8', margin: '6px 0 2px' },
-  termsItem: { fontSize: 13, color: '#374151', margin: 0, lineHeight: 1.6, paddingLeft: 8 },
-  btnRow: {
-    display: 'flex', gap: 10, marginTop: 4,
-  },
+  termsTitle: { fontSize: 14, fontWeight: 800, color: '#1a1a2e', margin: 0 },
+  termsDesc: { fontSize: 13, color: '#6b7280', margin: 0, lineHeight: 1.6 },
+  termsSectionTitle: { fontSize: 13, fontWeight: 700, color: '#6B82A0', margin: '6px 0 2px' },
+  termsItem: { fontSize: 13, color: '#6b7280', margin: 0, lineHeight: 1.6, paddingLeft: 8 },
+  btnRow: { display: 'flex', gap: 10, marginTop: 6 },
   btnSecondary: {
     flex: '0 0 auto', padding: '13px 20px', fontSize: 15, fontWeight: 600,
-    background: 'linear-gradient(135deg, #BAE6FD, #E0F2FE)', color: '#0369A1',
-    border: '1px solid #7DD3FC', borderRadius: 10, cursor: 'pointer',
-    whiteSpace: 'nowrap' as const,
+    background: '#fff', color: '#6b7280',
+    border: '1.5px solid #e5e7eb', borderRadius: 10, cursor: 'pointer',
+    whiteSpace: 'nowrap' as const, transition: 'all 0.15s',
   },
   btnPrimary: {
-    flex: 1, padding: '13px', fontSize: 16, fontWeight: 700,
-    background: 'linear-gradient(135deg, #3B82F6, #6366F1)',
+    flex: 1, padding: '13px', fontSize: 15, fontWeight: 700,
+    background: 'linear-gradient(135deg, #6B82A0 0%, #c47a8a 100%)',
     color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer',
+    transition: 'all 0.18s', boxShadow: '0 2px 10px rgba(107,130,160,0.25)',
   },
-  loginText: { fontSize: 14, color: '#64748B', marginTop: 20, textAlign: 'center' as const },
-  loginLink: { color: '#3B82F6', fontWeight: 600, textDecoration: 'none' },
-  btnHome: {
-    marginTop: 12, padding: '10px 32px', fontSize: 14, fontWeight: 700,
-    background: 'linear-gradient(135deg, #38BDF8, #3B82F6)',
-    color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer',
-  },
+  loginText: { fontSize: 14, color: '#9ca3af', marginTop: 18, textAlign: 'center' as const },
+  loginLink: { color: '#6B82A0', fontWeight: 600, textDecoration: 'none' },
   modalOverlay: {
     position: 'fixed' as const, inset: 0, background: 'rgba(0,0,0,0.4)',
     display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
   },
   modalBox: {
     background: '#fff', borderRadius: 20, padding: '32px 36px',
-    boxShadow: '0 8px 40px rgba(0,0,0,0.18)', maxWidth: 360, width: '90%',
+    boxShadow: '0 8px 40px rgba(0,0,0,0.12)', maxWidth: 360, width: '90%',
     display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 16,
   },
-  modalTitle: { fontSize: 17, fontWeight: 800, color: '#0F172A', textAlign: 'center' as const },
+  modalTitle: { fontSize: 17, fontWeight: 800, color: '#1a1a2e', textAlign: 'center' as const },
   modalList: { listStyle: 'none', padding: 0, margin: 0, width: '100%', display: 'flex', flexDirection: 'column' as const, gap: 8 },
-  modalItem: { fontSize: 15, color: '#EF4444', fontWeight: 600 },
+  modalItem: { fontSize: 15, color: '#e53e3e', fontWeight: 600 },
   modalBtn: {
     marginTop: 4, padding: '10px 36px', fontSize: 15, fontWeight: 700,
-    background: 'linear-gradient(135deg, #3B82F6, #6366F1)',
+    background: 'linear-gradient(135deg, #6B82A0 0%, #c47a8a 100%)',
     color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer',
   },
 }
