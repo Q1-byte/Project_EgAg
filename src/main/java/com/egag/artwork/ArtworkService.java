@@ -18,12 +18,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.InputStream;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -40,6 +34,7 @@ public class ArtworkService {
     private final UserRepository userRepository;
     private final FollowRepository followRepository;
     private final NotificationService notificationService;
+    private final com.egag.common.service.CloudinaryService cloudinaryService;
 
     // ── 내 갤러리에 저장 (email 기반) ──────────────────────────
     @Transactional
@@ -47,7 +42,8 @@ public class ArtworkService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(HttpStatus.UNAUTHORIZED, "USER_NOT_FOUND", "사용자를 찾을 수 없습니다."));
 
-        String savedImageUrl = downloadAndSave(req.getImageUrl());
+        // Cloudinary에 업로드 (로컬 저장 대신)
+        String savedImageUrl = cloudinaryService.uploadString(req.getImageUrl(), "artworks");
 
         Artwork artwork = Artwork.builder()
                 .id(UUID.randomUUID().toString())
@@ -97,31 +93,6 @@ public class ArtworkService {
         artworkRepository.delete(artwork);
     }
 
-    private String downloadAndSave(String imageUrl) {
-        if (imageUrl == null) return imageUrl;
-        try {
-            Path dir = Paths.get("uploads/artworks");
-            Files.createDirectories(dir);
-            String filename = UUID.randomUUID() + ".png";
-            Path dest = dir.resolve(filename);
-            if (imageUrl.startsWith("data:image")) {
-                // base64 data URI 처리
-                String base64 = imageUrl.substring(imageUrl.indexOf(",") + 1);
-                byte[] bytes = java.util.Base64.getDecoder().decode(base64);
-                Files.write(dest, bytes);
-            } else if (imageUrl.startsWith("http")) {
-                try (InputStream in = new URL(imageUrl).openStream()) {
-                    Files.copy(in, dest, StandardCopyOption.REPLACE_EXISTING);
-                }
-            } else {
-                return imageUrl;
-            }
-            return "/uploads/artworks/" + filename;
-        } catch (Exception e) {
-            System.err.println("[downloadAndSave] 실패: " + e.getMessage());
-            return imageUrl;
-        }
-    }
 
     // ── 공개/비공개 토글 (userId 기반, void) ───────────────────
     @Transactional
@@ -230,7 +201,7 @@ public class ArtworkService {
 
         if (existingLike.isPresent()) {
             likeRepository.delete(existingLike.get());
-            artwork.setLikeCount(Math.max(0, artwork.getLikeCount() - 1));
+            artworkRepository.decrementLikeCount(artworkId); // 원자적 감소
         } else {
             Like newLike = Like.builder()
                     .id(UUID.randomUUID().toString())
@@ -238,9 +209,9 @@ public class ArtworkService {
                     .artwork(artwork)
                     .build();
             likeRepository.save(newLike);
-            artwork.setLikeCount(artwork.getLikeCount() + 1);
+            artworkRepository.incrementLikeCount(artworkId); // 원자적 증가
             notificationService.createLikeNotification(artwork.getUser(), user, artwork);
         }
-        artworkRepository.save(artwork);
+        // artworkRepository.save(artwork); // 더 이상 필요 없음 (Modifying 쿼리가 실행함)
     }
 }

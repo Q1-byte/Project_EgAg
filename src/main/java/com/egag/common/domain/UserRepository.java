@@ -1,6 +1,9 @@
 package com.egag.common.domain;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -20,4 +23,20 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     // 🚫 [수정] status 대신 isSuspended 필드를 사용하도록 변경
     long countByIsSuspended(Boolean isSuspended);
+
+    @Modifying
+    @Query("UPDATE User u SET u.followerCount = u.followerCount + 1 WHERE u.id = :id")
+    void incrementFollowerCount(@Param("id") String id);
+
+    @Modifying
+    @Query("UPDATE User u SET u.followerCount = CASE WHEN u.followerCount > 0 THEN u.followerCount - 1 ELSE 0 END WHERE u.id = :id")
+    void decrementFollowerCount(@Param("id") String id);
+
+    @Modifying
+    @Query("UPDATE User u SET u.followingCount = u.followingCount + 1 WHERE u.id = :id")
+    void incrementFollowingCount(@Param("id") String id);
+
+    @Modifying
+    @Query("UPDATE User u SET u.followingCount = CASE WHEN u.followingCount > 0 THEN u.followingCount - 1 ELSE 0 END WHERE u.id = :id")
+    void decrementFollowingCount(@Param("id") String id);
 }
