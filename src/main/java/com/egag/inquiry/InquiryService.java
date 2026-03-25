@@ -1,6 +1,7 @@
 package com.egag.inquiry;
 
 import com.egag.common.EmailService;
+import com.egag.notification.NotificationService;
 import com.egag.common.domain.User;
 import com.egag.inquiry.dto.InquiryAdminResponse;
 import com.egag.inquiry.dto.InquiryRequest;
@@ -23,6 +24,7 @@ public class InquiryService {
 
     private final InquiryRepository inquiryRepository;
     private final EmailService emailService;
+    private final NotificationService notificationService;
     private final com.egag.common.service.CloudinaryService cloudinaryService;
 
     // 허용할 확장자 리스트
@@ -37,10 +39,14 @@ public class InquiryService {
             attachmentUrl = saveFile(file); // 실제 저장 및 DB용 경로 반환
         }
 
+        String email = (request.getEmail() != null && !request.getEmail().isBlank())
+                ? request.getEmail()
+                : (user != null ? user.getEmail() : null);
+
         Inquiry inquiry = Inquiry.builder()
                 .id(UUID.randomUUID().toString())
                 .user(user)
-                .email(request.getEmail())
+                .email(email)
                 .category(request.getCategory())
                 .title(request.getTitle())
                 .content(request.getContent())
@@ -78,6 +84,13 @@ public class InquiryService {
         inquiry.setRepliedBy(admin);
         inquiry.setRepliedAt(LocalDateTime.now());
         inquiryRepository.save(inquiry);
+        if (inquiry.getUser() != null) {
+            try {
+                notificationService.createInquiryReplyNotification(inquiry.getUser(), inquiry.getTitle());
+            } catch (Exception e) {
+                log.error("문의 답변 알림 발송 실패: {}", e.getMessage());
+            }
+        }
         try {
             emailService.sendInquiryReply(inquiry.getEmail(), inquiry.getTitle(), reply);
         } catch (Exception e) {
@@ -86,6 +99,7 @@ public class InquiryService {
     }
 
     private void sendEmailSafe(Inquiry inquiry) {
+        if (inquiry.getEmail() == null || inquiry.getEmail().isBlank()) return;
         try {
             emailService.sendInquiryConfirmation(inquiry.getEmail(), inquiry.getTitle());
         } catch (Exception e) {

@@ -207,9 +207,35 @@ export default function Header({ hideOnScroll = false }: HeaderProps) {
         .stamp-wait {
           animation: stamp-shake 2s infinite ease-in-out;
         }
+        .draw-menu-item span {
+          position: relative;
+          display: inline-block;
+        }
+        .draw-menu-item span::after {
+          content: '';
+          position: absolute;
+          left: 0; bottom: -1px;
+          width: 100%; height: 1.5px;
+          background: #d4607a;
+          transform: scaleX(0);
+          transform-origin: left;
+          transition: transform 0.22s ease;
+        }
+        .draw-menu-item:hover span::after {
+          transform: scaleX(1);
+        }
+        @media (max-width: 640px) {
+          .site-header { padding: 0 16px !important; }
+          .header-nav-links { display: none !important; }
+          .header-token-badge { display: none !important; }
+        }
+        @media (min-width: 641px) and (max-width: 860px) {
+          .sketch-btn { font-size: 13px !important; padding: 6px 10px !important; }
+          .header-token-badge { padding: 4px 10px !important; font-size: 12px !important; }
+        }
       `}</style>
 
-      <header style={{
+      <header className="site-header" style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '0 28px', height: 70, overflow: 'visible',
         background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(16px)',
@@ -227,7 +253,7 @@ export default function Header({ hideOnScroll = false }: HeaderProps) {
           <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => navigate('/')} role="button">
             <img src="/Egag_logo-removebg.png" alt="EgAg" style={{ height: 43 }} />
           </div>
-          <div ref={drawRef} style={{ position: 'relative' }}
+          <div className="header-nav-links" ref={drawRef} style={{ position: 'relative' }}
             onMouseEnter={() => setShowDrawMenu(true)}
             onMouseLeave={() => setShowDrawMenu(false)}>
             <button className="sketch-btn">
@@ -253,24 +279,23 @@ export default function Header({ hideOnScroll = false }: HeaderProps) {
                 { label: '시간초 그림판', type: 'time' as const },
               ].map(({ label, type }) => (
                 <button key={label} onClick={() => { setShowDrawMenu(false); setShowTokenModal(type) }}
+                  className="draw-menu-item"
                   style={{
                     display: 'block', width: '100%', padding: '11px 16px',
                     background: 'none', border: 'none', textAlign: 'left',
                     fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#4a4a6a',
                   }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(107,130,160,0.08)' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'none' }}
                 >
-                  {label}
+                  <span>{label}</span>
                 </button>
               ))}
             </div>
           </div>
-          <button className="sketch-btn" onClick={() => navigate('/explore')}>
+          <button className="sketch-btn header-nav-links" onClick={() => navigate('/explore')}>
             <PencilSVG />
             <span style={{ position: 'relative', zIndex: 1 }}>갤러리</span>
           </button>
-          <button className="sketch-btn" onClick={() => navigate('/token-shop')}>
+          <button className="sketch-btn header-nav-links" onClick={() => navigate('/token-shop')}>
             <PencilSVG />
             <span style={{ position: 'relative', zIndex: 1 }}>토큰충전</span>
           </button>
@@ -281,6 +306,7 @@ export default function Header({ hideOnScroll = false }: HeaderProps) {
           {isAuthenticated && nickname ? (
             <>
               <span
+                className="header-token-badge"
                 onClick={() => navigate('/token-shop')}
                 style={{
                   fontSize: 13, fontWeight: 700, color: '#6B82A0',

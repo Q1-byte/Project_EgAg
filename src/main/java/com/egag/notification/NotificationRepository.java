@@ -11,6 +11,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Stri
     List<Notification> findByUserIdAndIsReadFalse(String userId);
     long countByUserIdAndIsReadFalse(String userId);
     void deleteByArtworkId(String artworkId);
+    void deleteAllByUserId(String userId);
 
     @Modifying
     @Transactional

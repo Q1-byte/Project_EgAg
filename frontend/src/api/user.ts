@@ -79,6 +79,16 @@ export const toggleFollowUser = async (id: string): Promise<void> => {
   await client.post(`/users/${id}/follow`)
 }
 
+export const getFollowers = async (userId: string): Promise<import('../types').UserResponse[]> => {
+  const res = await client.get(`/users/${userId}/followers`)
+  return res.data
+}
+
+export const getFollowing = async (userId: string): Promise<import('../types').UserResponse[]> => {
+  const res = await client.get(`/users/${userId}/following`)
+  return res.data
+}
+
 // Existing functions (modified or kept as is)
 export const getMyProfile = () =>
   client.get<UserProfile>('/users/me').then(res => res.data)

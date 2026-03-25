@@ -34,6 +34,9 @@ public class Notification {
     @JoinColumn(name = "artwork_id")
     private Artwork artwork;
 
+    @Column(length = 255)
+    private String message;
+
     @Column(name = "is_read")
     @Builder.Default
     private Boolean isRead = false;

@@ -85,6 +85,14 @@ export default function Explore() {
         @keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
         .slide-card { transition: transform 0.2s, box-shadow 0.2s; text-decoration: none; display: block; }
         .slide-card:hover { transform: translateY(-8px) scale(1.03); box-shadow: 0 12px 40px rgba(107,130,160,0.22) !important; }
+        @media (max-width: 640px) {
+          .explore-main { padding-top: 120px !important; }
+          .explore-title { font-size: 26px !important; }
+          .explore-top3-card { width: calc(100vw - 48px) !important; max-width: 312px !important; }
+        }
+        @media (min-width: 641px) and (max-width: 860px) {
+          .explore-title { font-size: 30px !important; }
+        }
       `}</style>
 
       <div style={s.blobs}>
@@ -95,11 +103,11 @@ export default function Explore() {
 
       <Header />
 
-      <main style={s.main}>
+      <main className="explore-main" style={s.main}>
         {/* 히어로 */}
         <div style={s.hero}>
           <p style={s.eyebrow}>✦ Public Gallery</p>
-          <h1 style={s.title}>갤러리 둘러보기</h1>
+          <h1 className="explore-title" style={s.title}>갤러리 둘러보기</h1>
           <p style={s.subtitle}>친구들이 그린 멋진 그림들을 만나보세요</p>
         </div>
 
@@ -121,8 +129,8 @@ export default function Explore() {
               </div>
               <div style={s.top3Grid}>
                 {top3.map((artwork, idx) => (
-                  <div key={artwork.id} style={{ 
-                    width: 312, 
+                  <div key={artwork.id} className="explore-top3-card" style={{
+                    width: 312,
                     transform: `rotate(${((idx % 3) - 1) * 1.5}deg)`,
                     transition: 'transform 0.3s'
                   }}>

@@ -73,12 +73,19 @@ export default function PasswordReset() {
         <style>{`
           .pr-btn-primary:hover { opacity: 0.88; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59,130,246,0.35); }
           .pr-btn-primary:active { transform: translateY(0); }
+          @media (max-width: 640px) {
+            .pr-card { width: calc(100vw - 32px) !important; padding: 0 20px 32px !important; border-radius: 16px !important; }
+            .pr-title { font-size: 18px !important; }
+          }
+          @media (min-width: 641px) and (max-width: 860px) {
+            .pr-card { width: calc(100vw - 64px) !important; max-width: 440px !important; padding: 0 36px 40px !important; }
+          }
         `}</style>
-        <div style={s.card}>
+        <div style={s.card} className="pr-card">
           <div style={s.logo} onClick={() => navigate('/')} role="button">
             <img src="/Egag_logo-removebg.png" alt="EgAg" style={{ height: 64, marginTop: 40, marginBottom: 20 }} />
           </div>
-          <h1 style={s.title}>이메일을 확인해주세요</h1>
+          <h1 style={s.title} className="pr-title">이메일을 확인해주세요</h1>
           <p style={s.sentDesc}>
             <strong>{form.email}</strong>로<br />
             비밀번호 재설정 링크를 발송했습니다.<br />
@@ -106,13 +113,23 @@ export default function PasswordReset() {
         .pr-btn-primary:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59,130,246,0.35); }
         .pr-btn-primary:active { transform: translateY(0); }
         .pr-link:hover { color: #c47a8a !important; text-decoration: underline !important; }
+        @media (max-width: 640px) {
+          .pr-card { width: calc(100vw - 32px) !important; padding: 0 20px 32px !important; border-radius: 16px !important; }
+          .pr-title { font-size: 18px !important; }
+          .pr-btn-row { flex-direction: column !important; }
+          .pr-btn-row .pr-btn-secondary { flex: unset !important; width: 100% !important; }
+          .pr-btn-row .pr-btn-primary { flex: unset !important; width: 100% !important; }
+        }
+        @media (min-width: 641px) and (max-width: 860px) {
+          .pr-card { width: calc(100vw - 64px) !important; max-width: 440px !important; padding: 0 36px 40px !important; }
+        }
       `}</style>
-      <div style={s.card}>
+      <div style={s.card} className="pr-card">
         <div style={s.logo} onClick={() => navigate('/')} role="button">
           <img src="/Egag_logo-removebg.png" alt="EgAg" style={{ height: 64, marginTop: 40, marginBottom: 20 }} />
         </div>
 
-        <h1 style={s.title}>비밀번호 찾기</h1>
+        <h1 style={s.title} className="pr-title">비밀번호 찾기</h1>
         <p style={s.subtitle}>가입 시 입력하신 정보를 입력해주세요.</p>
 
         {errors.general && <div style={s.errorBanner}>{errors.general}</div>}
@@ -148,7 +165,7 @@ export default function PasswordReset() {
             {errors.email && <span style={s.fieldError}>{errors.email}</span>}
           </div>
 
-          <div style={s.btnRow}>
+          <div style={s.btnRow} className="pr-btn-row">
             <button className="pr-btn-secondary" style={s.btnSecondary} type="button" onClick={() => navigate('/')}>
               취소
             </button>

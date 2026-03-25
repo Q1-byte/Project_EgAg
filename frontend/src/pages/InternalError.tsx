@@ -36,6 +36,17 @@ const InternalError: React.FC = () => {
     }, []);
 
     const errorStyle = `
+        @media (max-width: 640px) {
+          .ie-title { font-size: 80px !important; }
+          .ie-h2 { font-size: 18px !important; margin-bottom: 8px !important; }
+          .ie-desc { font-size: 14px !important; max-width: 90vw !important; }
+          .ie-btn { margin-top: 32px !important; padding: 13px 32px !important; font-size: 15px !important; }
+        }
+        @media (min-width: 641px) and (max-width: 860px) {
+          .ie-title { font-size: 96px !important; }
+          .ie-h2 { font-size: 22px !important; }
+          .ie-desc { font-size: 15px !important; }
+        }
         @keyframes glitch {
             0% { transform: translate(0); }
             20% { transform: translate(-3px, 3px) skewX(5deg); }
@@ -106,7 +117,7 @@ const InternalError: React.FC = () => {
 
             <div style={{ position: 'absolute', top: '25%', animation: 'steamUp 2s infinite', zIndex: 2 }}>💨</div>
 
-            <h1 style={{
+            <h1 className="ie-title" style={{
                 fontSize: '110px', fontWeight: 900, color: '#ff4d4d', margin: 0,
                 animation: shake ? 'glitch 0.3s infinite' : 'none',
                 textShadow: '0 0 25px rgba(255, 77, 77, 0.5)',
@@ -147,7 +158,7 @@ const InternalError: React.FC = () => {
             </div>
 
             {/* ── 텍스트 영역 가독성 보강 ── */}
-            <h2 style={{
+            <h2 className="ie-h2" style={{
                 fontSize: '26px',
                 fontWeight: 800,
                 marginBottom: '12px',
@@ -157,7 +168,7 @@ const InternalError: React.FC = () => {
             }}>
                 삐약이가 숨어버렸어요!
             </h2>
-            <p style={{
+            <p className="ie-desc" style={{
                 color: '#cccccc', // 👈 본문은 부드러운 연회색으로 구분
                 fontSize: '17px',
                 textAlign: 'center',
@@ -173,6 +184,7 @@ const InternalError: React.FC = () => {
             </p>
 
             <button
+                className="ie-btn"
                 onClick={() => window.location.reload()}
                 style={{
                     marginTop: '45px', padding: '16px 48px', background: '#ff4d4d', color: '#ffffff',

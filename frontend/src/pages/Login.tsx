@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { login } from '../api/auth'
+import { getMe } from '../api/user'
 import { useAuthStore } from '../stores/useAuthStore'
 
 function AnimatedEye({ passwordFocused, emailFocused }: { passwordFocused: boolean; emailFocused: boolean }) {
@@ -142,7 +143,7 @@ function AnimatedEye({ passwordFocused, emailFocused }: { passwordFocused: boole
 
 export default function Login() {
   const navigate = useNavigate()
-  const setAuth = useAuthStore(s => s.setAuth)
+  const { setAuth, setProfileImageUrl } = useAuthStore()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -196,6 +197,11 @@ export default function Login() {
       if (res.refreshToken) localStorage.setItem('refreshToken', res.refreshToken)
       setAuth(res.userId, res.nickname, res.role, res.tokenBalance, res.accessToken)
 
+      // 프로필 이미지 즉시 반영
+      getMe().then(profile => {
+        if (profile.profileImageUrl) setProfileImageUrl(profile.profileImageUrl)
+      }).catch(() => {})
+
       navigate('/')
 
     } catch (err: unknown) {
@@ -236,6 +242,9 @@ export default function Login() {
         @media (max-width: 700px) {
           .login-left { display: none !important; }
           .login-right { border-radius: 0 !important; }
+        }
+        @media (max-width: 640px) {
+          .login-right { padding: 24px 20px !important; }
         }
         @keyframes hueShift {
           0%   { filter: hue-rotate(0deg); }
@@ -278,7 +287,7 @@ export default function Login() {
 
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, marginTop: 70, marginBottom: 40 }}>
           <div style={s.logo} onClick={() => navigate('/')}>
-            <img src="/Egag_logo-removebg.png" alt="EgAg" style={{ height: 96 }} />
+            <img src="/Egag_logo-removebg.png" alt="EgAg" style={{ height: 110 }} />
           </div>
           <div style={{ marginTop: -40 }}>
             <AnimatedEye passwordFocused={passwordFocused} emailFocused={emailFocused} />

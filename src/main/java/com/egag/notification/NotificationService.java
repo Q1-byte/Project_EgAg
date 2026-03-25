@@ -58,6 +58,31 @@ public class NotificationService {
         return notificationRepository.countByUserIdAndIsReadFalse(userId);
     }
 
+    public void createInquiryReplyNotification(User recipient, String inquiryTitle) {
+        Notification notification = Notification.builder()
+                .id(java.util.UUID.randomUUID().toString())
+                .user(recipient)
+                .actor(recipient)
+                .type("INQUIRY_REPLY")
+                .message(inquiryTitle)
+                .build();
+        notificationRepository.save(notification);
+    }
+
+    @Transactional
+    public void deleteAllNotifications(String userId) {
+        notificationRepository.deleteAllByUserId(userId);
+    }
+
+    @Transactional
+    public void deleteNotification(String notificationId, String userId) {
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new RuntimeException("알림을 찾을 수 없습니다."));
+        if (!notification.getUser().getId().equals(userId))
+            throw new RuntimeException("삭제 권한이 없습니다.");
+        notificationRepository.delete(notification);
+    }
+
     private NotificationResponse convertToResponse(Notification n) {
         return NotificationResponse.builder()
                 .id(n.getId())
@@ -67,6 +92,7 @@ public class NotificationService {
                 .actorProfileImage(n.getActor().getProfileImageUrl())
                 .artworkId(n.getArtwork() != null ? n.getArtwork().getId() : null)
                 .artworkTitle(n.getArtwork() != null ? n.getArtwork().getTitle() : null)
+                .message(n.getMessage())
                 .isRead(n.getIsRead())
                 .createdAt(n.getCreatedAt())
                 .build();

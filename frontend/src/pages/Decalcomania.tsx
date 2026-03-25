@@ -355,6 +355,10 @@ export default function Decalcomania() {
           .cv-picker { width: 22px !important; height: 22px !important; }
           .cv-picker-inner { width: 22px !important; height: 22px !important; }
           .cv-hint { display: none !important; }
+          .cv-color-wrap { overflow-x: auto !important; flex-shrink: 1 !important; max-width: 160px !important; }
+          .cv-overlay-panel { width: calc(100vw - 32px) !important; max-width: 420px !important; padding: 20px 16px !important; }
+          .cv-result-images { flex-direction: column !important; }
+          .cv-result-modal { width: calc(100vw - 24px) !important; max-width: 100% !important; padding: 16px !important; }
         }
       `}</style>
 
@@ -565,7 +569,7 @@ export default function Decalcomania() {
       {/* ── AI 추측 ── */}
       {phase === 'guess' && guess && (
         <Overlay>
-          <div style={{ background: 'white', borderRadius: 28, padding: 36, width: 400, display: 'flex', flexDirection: 'column', gap: 20, boxShadow: '0 24px 64px rgba(14,165,233,0.25)' }}>
+          <div className="cv-overlay-panel" style={{ background: 'white', borderRadius: 28, padding: 36, width: 400, display: 'flex', flexDirection: 'column', gap: 20, boxShadow: '0 24px 64px rgba(14,165,233,0.25)' }}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ display: 'inline-block', background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)', borderRadius: 16, padding: '6px 16px', marginBottom: 12, fontSize: 12, fontWeight: 700, color: '#0369a1', letterSpacing: 0.5 }}>
                 AI의 추측
@@ -610,7 +614,7 @@ export default function Decalcomania() {
       {/* ── 스타일 선택 ── */}
       {phase === 'style' && (
         <Overlay>
-          <div style={{ background: 'white', borderRadius: 28, padding: 36, width: 420, display: 'flex', flexDirection: 'column', gap: 20, boxShadow: '0 24px 64px rgba(14,165,233,0.25)' }}>
+          <div className="cv-overlay-panel" style={{ background: 'white', borderRadius: 28, padding: 36, width: 420, display: 'flex', flexDirection: 'column', gap: 20, boxShadow: '0 24px 64px rgba(14,165,233,0.25)' }}>
             <div style={{ textAlign: 'center' }}>
               <p style={{ margin: '0 0 4px', fontSize: 13, color: '#7dd3fc', fontWeight: 600 }}>어떤 스타일로 바꿔줄까?</p>
               <p style={{ margin: 0, fontSize: 26, fontWeight: 800, color: '#0c4a6e' }}>{confirmedSubject}</p>
@@ -656,7 +660,7 @@ export default function Decalcomania() {
       {/* ── 결과 ── */}
       {phase === 'result' && result && (
         <Overlay>
-          <div style={{ background: 'white', borderRadius: 28, padding: 28, maxWidth: 1200, width: '95%', display: 'flex', flexDirection: 'column', gap: 16, boxShadow: '0 24px 64px rgba(14,165,233,0.25)', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div className="cv-result-modal" style={{ background: 'white', borderRadius: 28, padding: 28, maxWidth: 1200, width: '95%', display: 'flex', flexDirection: 'column', gap: 16, boxShadow: '0 24px 64px rgba(14,165,233,0.25)', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <p style={{ margin: 0, fontSize: 12, color: '#7dd3fc', fontWeight: 600 }}>변환 완료</p>
@@ -668,7 +672,7 @@ export default function Decalcomania() {
               </button>
             </div>
 
-            <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+            <div className="cv-result-images" style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
               {/* 내가 그린 그림 */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#7dd3fc', letterSpacing: 0.5, textAlign: 'center' }}>내가 그린 그림</p>
