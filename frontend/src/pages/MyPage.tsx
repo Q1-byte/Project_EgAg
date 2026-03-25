@@ -27,6 +27,8 @@ export default function MyPage() {
   const [followModal, setFollowModal] = useState<'followers' | 'following' | null>(null)
   const [followList, setFollowList] = useState<UserResponse[]>([])
   const [followListLoading, setFollowListLoading] = useState(false)
+  const [galleryPage, setGalleryPage] = useState(1)
+  const GALLERY_PAGE_SIZE = 6
 
   useEffect(() => {
     if (!isAuthenticated) { navigate('/login'); return }
@@ -141,7 +143,7 @@ export default function MyPage() {
           ] as { key: Tab; label: string }[]).map(t => (
             <button key={t.key} className="mp-tab"
               style={{ ...s.tabBtn, ...(tab === t.key ? s.tabBtnActive : {}) }}
-              onClick={() => setTab(t.key)}
+              onClick={() => { setTab(t.key); setGalleryPage(1) }}
             >
               {t.label}
             </button>
@@ -266,7 +268,7 @@ export default function MyPage() {
                   <span style={s.galleryCount}>{artworks.length}개</span>
                 </div>
                 <div style={s.galleryGrid}>
-                  {artworks.map((art, i) => (
+                  {artworks.slice((galleryPage - 1) * GALLERY_PAGE_SIZE, galleryPage * GALLERY_PAGE_SIZE).map((art, i) => (
                     <div key={art.id} className="mp-gallery-card" style={{ ...s.galleryCard, animation: `fadeUp ${0.3 + i * 0.04}s ease both` }}>
                       {/* 이미지 영역 */}
                       <div style={s.galleryImgRow} onClick={() => {
@@ -329,6 +331,53 @@ export default function MyPage() {
                     </div>
                   ))}
                 </div>
+
+                {/* 페이지네이션 */}
+                {artworks.length > GALLERY_PAGE_SIZE && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 28 }}>
+                    <button
+                      onClick={() => setGalleryPage(p => Math.max(1, p - 1))}
+                      disabled={galleryPage === 1}
+                      style={{
+                        width: 36, height: 36, borderRadius: 10, border: '1.5px solid #e9d5ff',
+                        background: galleryPage === 1 ? '#f5f3ff' : 'white',
+                        color: galleryPage === 1 ? '#c4b5d0' : '#7c3aed',
+                        cursor: galleryPage === 1 ? 'default' : 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 16, fontWeight: 700, transition: 'all 0.15s',
+                      }}
+                    >‹</button>
+
+                    {Array.from({ length: Math.ceil(artworks.length / GALLERY_PAGE_SIZE) }, (_, i) => i + 1).map(page => (
+                      <button
+                        key={page}
+                        onClick={() => setGalleryPage(page)}
+                        style={{
+                          width: 36, height: 36, borderRadius: 10,
+                          border: page === galleryPage ? 'none' : '1.5px solid #e9d5ff',
+                          background: page === galleryPage ? 'linear-gradient(135deg, #7c3aed, #c47a8a)' : 'white',
+                          color: page === galleryPage ? 'white' : '#7c3aed',
+                          cursor: 'pointer', fontWeight: 700, fontSize: 14,
+                          transition: 'all 0.15s',
+                          boxShadow: page === galleryPage ? '0 4px 12px rgba(124,58,237,0.25)' : 'none',
+                        }}
+                      >{page}</button>
+                    ))}
+
+                    <button
+                      onClick={() => setGalleryPage(p => Math.min(Math.ceil(artworks.length / GALLERY_PAGE_SIZE), p + 1))}
+                      disabled={galleryPage === Math.ceil(artworks.length / GALLERY_PAGE_SIZE)}
+                      style={{
+                        width: 36, height: 36, borderRadius: 10, border: '1.5px solid #e9d5ff',
+                        background: galleryPage === Math.ceil(artworks.length / GALLERY_PAGE_SIZE) ? '#f5f3ff' : 'white',
+                        color: galleryPage === Math.ceil(artworks.length / GALLERY_PAGE_SIZE) ? '#c4b5d0' : '#7c3aed',
+                        cursor: galleryPage === Math.ceil(artworks.length / GALLERY_PAGE_SIZE) ? 'default' : 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 16, fontWeight: 700, transition: 'all 0.15s',
+                      }}
+                    >›</button>
+                  </div>
+                )}
               </>
             )}
           </div>
