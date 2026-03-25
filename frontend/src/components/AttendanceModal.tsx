@@ -14,7 +14,7 @@ interface AttendanceModalProps {
 const MISSIONS = [
   { days: 3,  bonus: 1,  label: '3일 연속',  color: '#FFE566', tier: 1 },
   { days: 7,  bonus: 3,  label: '7일 연속',  color: '#FFD700', tier: 2 },
-  { days: 30, bonus: 10, label: '30일 연속', color: '#E6A800', tier: 3 },
+  { days: 15, bonus: 7,  label: '15일 연속', color: '#E6A800', tier: 3 },
 ];
 
 export default function AttendanceModal({ onClose, onSuccess }: AttendanceModalProps) {
@@ -77,7 +77,10 @@ export default function AttendanceModal({ onClose, onSuccess }: AttendanceModalP
   const getStreak = () => {
     let streak = 0;
     const today = new Date();
-    for (let i = 0; i < 60; i++) {
+    const todayStr = formatDate(today);
+    // 오늘 출석 안 했으면 어제부터 계산
+    const startOffset = history.includes(todayStr) ? 0 : 1;
+    for (let i = startOffset; i < 60; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
       if (history.includes(formatDate(d))) streak++;
@@ -262,8 +265,8 @@ export default function AttendanceModal({ onClose, onSuccess }: AttendanceModalP
                 position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)',
                 height: 8, borderRadius: 99,
                 width: `${(thisMonthCount / new Date(year, month + 1, 0).getDate()) * 100}%`,
-                background: 'linear-gradient(90deg, #6B82A0, #c47a8a)',
-                boxShadow: '0 0 8px rgba(196,122,138,0.5)',
+                background: 'linear-gradient(90deg, #a78bfa, #60a5fa, #34d399, #fbbf24, #f97316, #ec4899)',
+                boxShadow: '0 0 10px rgba(167,139,250,0.5)',
                 transition: 'width 1s cubic-bezier(0.34, 1.56, 0.64, 1)',
                 minWidth: thisMonthCount > 0 ? 16 : 0,
               }} />
@@ -408,11 +411,13 @@ export default function AttendanceModal({ onClose, onSuccess }: AttendanceModalP
                 marginBottom: 12, padding: '10px 16px', borderRadius: 12,
                 background: 'rgba(255,215,0,0.12)',
                 border: '1.5px solid rgba(255,215,0,0.4)',
-                display: 'flex', alignItems: 'center', gap: 8,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                position: 'relative', overflow: 'hidden',
                 animation: 'popIn 0.4s ease',
               }}>
-                <span style={{ fontSize: 18 }}>🎉</span>
-                <span style={{ fontSize: 13, fontWeight: 800, color: '#FFD700' }}>
+                <span style={{ position: 'absolute', fontSize: 28, opacity: 0.25, left: 10, zIndex: 0 }}>🎉</span>
+                <span style={{ position: 'absolute', fontSize: 28, opacity: 0.25, right: 10, zIndex: 0 }}>🎉</span>
+                <span style={{ fontSize: 13, fontWeight: 800, color: '#FFD700', position: 'relative', zIndex: 1 }}>
                   토큰 1개가 지급됐어요!
                 </span>
               </div>

@@ -54,8 +54,17 @@ export default function KakaoOnboarding() {
 
   return (
     <div style={s.bg}>
-      <div style={s.card}>
-        <h1 style={s.title}>추가 정보 입력</h1>
+      <style>{`
+        @media (max-width: 640px) {
+          .ko-card { width: calc(100vw - 32px) !important; padding: 32px 20px !important; border-radius: 20px !important; }
+          .ko-title { font-size: 20px !important; }
+        }
+        @media (min-width: 641px) and (max-width: 860px) {
+          .ko-card { width: calc(100vw - 64px) !important; max-width: 460px !important; padding: 40px 32px !important; }
+        }
+      `}</style>
+      <div style={s.card} className="ko-card">
+        <h1 style={s.title} className="ko-title">추가 정보 입력</h1>
         <p style={s.subtitle}>
           <strong>{kakaoNickname}</strong>님, 서비스 이용을 위해 정보를 입력해주세요.
         </p>

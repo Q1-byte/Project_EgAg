@@ -34,4 +34,16 @@ public class NotificationController {
         if (principal == null) throw new CustomException(HttpStatus.UNAUTHORIZED, "USER_NOT_FOUND", "로그인이 필요합니다.");
         return notificationService.getUnreadCount(principal.getUserId());
     }
+
+    @DeleteMapping("/{id}")
+    public void deleteNotification(@PathVariable String id, @AuthenticationPrincipal PrincipalDetails principal) {
+        if (principal == null) throw new CustomException(HttpStatus.UNAUTHORIZED, "USER_NOT_FOUND", "로그인이 필요합니다.");
+        notificationService.deleteNotification(id, principal.getUserId());
+    }
+
+    @DeleteMapping
+    public void deleteAllNotifications(@AuthenticationPrincipal PrincipalDetails principal) {
+        if (principal == null) throw new CustomException(HttpStatus.UNAUTHORIZED, "USER_NOT_FOUND", "로그인이 필요합니다.");
+        notificationService.deleteAllNotifications(principal.getUserId());
+    }
 }

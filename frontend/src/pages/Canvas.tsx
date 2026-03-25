@@ -348,7 +348,7 @@ export default function Canvas() {
   return (
     <div style={{ position: 'relative' }}>
       <style>{`
-        .cv-logo { height: 33px; }
+        .cv-logo { height: 52px; }
         .cv-color-wrap { gap: 9px; }
         .cv-color-btn { width: 26px; height: 26px; }
         .cv-picker { width: 26px; height: 26px; }
@@ -381,10 +381,16 @@ export default function Canvas() {
         @media (max-width: 600px) {
           .cv-logo { height: 19px !important; }
           .cv-color-wrap { gap: 5px !important; }
-          .cv-color-btn { width: 22px !important; height: 22px !important; }
-          .cv-picker { width: 22px !important; height: 22px !important; }
-          .cv-picker-inner { width: 22px !important; height: 22px !important; }
+          .cv-color-btn { width: 20px !important; height: 20px !important; }
+          .cv-picker { width: 20px !important; height: 20px !important; }
+          .cv-picker-inner { width: 20px !important; height: 20px !important; }
           .cv-hint { display: none !important; }
+          .cv-width-btn { width: 28px !important; height: 28px !important; }
+          .cv-tool-btn { width: 30px !important; height: 30px !important; }
+          .cv-clear-label { display: none !important; }
+          .cv-modal { width: calc(100vw - 40px) !important; max-width: calc(100vw - 40px) !important; }
+          .cv-style-modal { width: calc(100vw - 40px) !important; max-width: calc(100vw - 40px) !important; }
+          .cv-toolbar { padding: 4px 8px !important; gap: 6px !important; }
         }
       `}</style>
     <div style={{
@@ -406,7 +412,7 @@ export default function Canvas() {
       }}>
 
         {/* 툴바 */}
-        <div style={{
+        <div className="cv-toolbar" style={{
           display: 'flex', alignItems: 'center', gap: 10,
           padding: '6px 20px',
           background: 'linear-gradient(135deg, #fdf0ff 0%, #e8f4ff 50%, #fff0f8 100%)',
@@ -420,7 +426,7 @@ export default function Canvas() {
             src="/Egag_logo-removebg.png"
             alt="EgAg"
             className="cv-logo"
-            style={{ height: 100, cursor: 'pointer', marginRight: 4 }}
+            style={{ cursor: 'pointer', marginRight: 4 }}
             onClick={() => setShowExitConfirm(true)}
           />
 
@@ -473,6 +479,7 @@ export default function Canvas() {
             {WIDTHS.map((w) => (
               <button
                 key={w}
+                className="cv-width-btn"
                 onClick={() => { setStrokeWidth(w); setIsEraser(false) }}
                 style={{
                   width: 36, height: 36, borderRadius: 10, padding: 0,
@@ -496,6 +503,7 @@ export default function Canvas() {
 
           {/* 지우개 */}
           <button
+            className="cv-tool-btn"
             onClick={() => { setIsEraser((v) => !v); setIsBucket(false) }}
             style={{
               width: 38, height: 38, borderRadius: 10, padding: 0,
@@ -511,6 +519,7 @@ export default function Canvas() {
 
           {/* 페인트통 */}
           <button
+            className="cv-tool-btn"
             onClick={() => { setIsBucket((v) => !v); setIsEraser(false) }}
             style={{
               width: 38, height: 38, borderRadius: 10, padding: 0,
@@ -533,6 +542,7 @@ export default function Canvas() {
           ].map(({ label, icon, onClick, disabled }) => (
             <button
               key={label}
+              className="cv-tool-btn"
               onClick={onClick}
               disabled={disabled}
               title={label}
@@ -567,7 +577,7 @@ export default function Canvas() {
               flexShrink: 0,
             }}
           >
-            <TrashIcon /> 전체 지우기
+            <TrashIcon /> <span className="cv-clear-label">전체 지우기</span>
           </button>
 
           {/* 완료 버튼 */}
@@ -644,7 +654,7 @@ export default function Canvas() {
       {/* ── 나가기 확인 ── */}
       {showExitConfirm && (
         <Overlay>
-          <div style={{
+          <div className="cv-modal" style={{
             background: 'white', borderRadius: 28, padding: '16px 40px',
             width: 360, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
             boxShadow: '0 24px 64px rgba(124,58,237,0.25)',
@@ -713,7 +723,7 @@ export default function Canvas() {
 
       {phase === 'guess' && guess && (
         <Overlay>
-          <div style={{
+          <div className="cv-modal" style={{
             background: 'white', borderRadius: 28, padding: 36,
             width: 400, display: 'flex', flexDirection: 'column', gap: 20,
             boxShadow: '0 24px 64px rgba(124,58,237,0.25)',
@@ -807,7 +817,7 @@ export default function Canvas() {
 
       {phase === 'style' && (
         <Overlay>
-          <div style={{
+          <div className="cv-modal cv-style-modal" style={{
             background: 'white', borderRadius: 28, padding: 36,
             width: 420, display: 'flex', flexDirection: 'column', gap: 20,
             boxShadow: '0 24px 64px rgba(124,58,237,0.25)',

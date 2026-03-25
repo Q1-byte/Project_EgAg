@@ -357,6 +357,8 @@ export default function Home() {
         @media (max-width: 600px) {
           .egag-card { width: 100% !important; }
           .egag-cards { padding: 0 20px; }
+          .fab-inquiry, .fab-attendance { padding: 10px 14px !important; font-size: 13px !important; right: 16px !important; gap: 6px !important; }
+          .fab-top { right: 16px !important; width: 40px !important; height: 40px !important; }
         }
       `}</style>
 
@@ -377,9 +379,9 @@ export default function Home() {
           src="/Egag_logo-removebg.png"
           alt=""
           style={{
-            position: 'absolute', top: '50%', left: '50%',
+            position: 'absolute', top: '46%', left: '50%',
             transform: 'translate(-50%, -50%)',
-            width: 'clamp(300px, 37vw, 500px)',
+            width: 'clamp(360px, 44vw, 600px)',
             opacity: 0.11,
             filter: 'blur(0.5px) saturate(0.6)',
             userSelect: 'none', pointerEvents: 'none',
@@ -418,7 +420,7 @@ export default function Home() {
         <h1 className="egag-main-title" style={{ ...s.mainTitle, position: 'relative', zIndex: 2 }}>무엇을 그려볼까요?</h1>
         <p className="egag-main-desc" style={{ ...s.mainDesc, position: 'relative', zIndex: 2 }}>AI와 함께하는 3가지 그림 놀이, 지금 바로 시작해봐요</p>
 
-        <div style={{ marginTop: 40 }}>
+        <div style={{ marginTop: 60 }}>
           <ArtworkCarousel />
         </div>
 
@@ -551,7 +553,7 @@ export default function Home() {
         className="fab-top"
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         style={{
-          position: 'fixed', bottom: 152, right: 32,
+          position: 'fixed', bottom: isAuthenticated ? 152 : 92, right: 32,
           width: 48, height: 48, borderRadius: '50%',
           background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(16px)',
           border: '1.5px solid rgba(107,130,160,0.25)',

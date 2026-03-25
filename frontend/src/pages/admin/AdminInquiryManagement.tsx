@@ -130,7 +130,7 @@ const AdminInquiryManagement = () => {
                                                 onClick={() => handleReply(item.id)}
                                                 disabled={submitting === item.id || !replyMap[item.id]?.trim()}
                                             >
-                                                {submitting === item.id ? '발송 중...' : '이메일로 답변 발송'}
+                                                {submitting === item.id ? '처리 중...' : '답변하기'}
                                             </button>
                                         </div>
                                     )}

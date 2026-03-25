@@ -18,6 +18,7 @@ public class NotificationResponse {
     private String actorProfileImage;
     private String artworkId;
     private String artworkTitle;
+    private String message;
     private Boolean isRead;
     private LocalDateTime createdAt;
 }

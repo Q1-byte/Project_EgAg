@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getMyProfile, updateMyProfile, uploadAvatar } from '../api/user'
+import { getMyProfile, updateMyProfile, uploadAvatar, checkNicknameAvailable } from '../api/user'
 import Header from '../components/Header'
 
 const AVATAR_PRESETS = [
@@ -20,6 +20,9 @@ export default function EditProfile() {
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [nickname, setNickname] = useState('')
+  const [originalNickname, setOriginalNickname] = useState('')
+  const [nicknameChecking, setNicknameChecking] = useState(false)
+  const [nicknameAvailable, setNicknameAvailable] = useState<boolean | null>(null)
   const [subEmail, setSubEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [profileImageUrl, setProfileImageUrl] = useState('')
@@ -31,6 +34,7 @@ export default function EditProfile() {
     getMyProfile()
       .then(user => {
         setNickname(user.nickname)
+        setOriginalNickname(user.nickname)
         setSubEmail(user.subEmail || '')
         setPhone(user.phone || '')
         setProfileImageUrl(user.profileImageUrl || '')
@@ -54,8 +58,43 @@ export default function EditProfile() {
     }
   }
 
+  const formatPhone = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 11)
+    if (digits.startsWith('02')) {
+      if (digits.length <= 2) return digits
+      if (digits.length <= 5) return `${digits.slice(0, 2)}-${digits.slice(2)}`
+      if (digits.length <= 9) return `${digits.slice(0, 2)}-${digits.slice(2, 5)}-${digits.slice(5)}`
+      return `${digits.slice(0, 2)}-${digits.slice(2, 6)}-${digits.slice(6)}`
+    }
+    if (digits.length <= 3) return digits
+    if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`
+    return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`
+  }
+
+  const nicknameChanged = nickname.trim() !== originalNickname
+  const canSubmit = !nicknameChanged || nicknameAvailable === true
+
+  const handleCheckNickname = async () => {
+    const trimmed = nickname.trim()
+    if (!trimmed) return
+    setNicknameChecking(true)
+    setNicknameAvailable(null)
+    try {
+      const available = await checkNicknameAvailable(trimmed)
+      setNicknameAvailable(available)
+    } catch {
+      setNicknameAvailable(null)
+    } finally {
+      setNicknameChecking(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!canSubmit) {
+      setError('닉네임 중복 확인을 해주세요.')
+      return
+    }
     setSaving(true)
     setError('')
     setSuccess('')
@@ -79,6 +118,18 @@ export default function EditProfile() {
         .preset-card { transition: transform 0.15s, box-shadow 0.15s; cursor: pointer; }
         .preset-card:hover { transform: translateY(-4px) scale(1.04); }
         .upload-zone:hover { border-color: rgba(196,122,138,0.6) !important; background: rgba(252,232,237,0.4) !important; }
+        @media (max-width: 640px) {
+          .ep-main { padding: 80px 16px 60px !important; }
+          .ep-card { padding: 28px 20px !important; border-radius: 20px !important; }
+          .ep-title { font-size: 22px !important; }
+          .ep-preset-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .ep-btn-row { flex-direction: column !important; }
+          .ep-btn-row button { flex: unset !important; width: 100% !important; }
+        }
+        @media (min-width: 641px) and (max-width: 860px) {
+          .ep-main { padding: 100px 24px 72px !important; }
+          .ep-card { padding: 36px 32px !important; }
+        }
       `}</style>
 
       {/* 배경 blob */}
@@ -90,14 +141,14 @@ export default function EditProfile() {
 
       <Header />
 
-      <main style={s.main}>
+      <main style={s.main} className="ep-main">
         {loading ? (
           <p style={{ color: '#8a7a9a', fontSize: 15 }}>불러오는 중...</p>
         ) : (
-          <div style={s.card}>
+          <div style={s.card} className="ep-card">
             {/* 타이틀 */}
             <p style={s.eyebrow}>✦ My Profile</p>
-            <h1 style={s.title}>내 모습 바꾸기</h1>
+            <h1 style={s.title} className="ep-title">내 모습 바꾸기</h1>
             <p style={s.subtitle}>닉네임과 프로필 사진을 바꿔보세요</p>
 
             {/* 현재 아바타 미리보기 */}
@@ -124,7 +175,7 @@ export default function EditProfile() {
               {/* 캐릭터 선택 */}
               <div style={s.section}>
                 <p style={s.sectionLabel}>나를 닮은 캐릭터</p>
-                <div style={s.presetGrid}>
+                <div style={s.presetGrid} className="ep-preset-grid">
                   {AVATAR_PRESETS.map(p => (
                     <div
                       key={p.url}
@@ -185,14 +236,51 @@ export default function EditProfile() {
               {/* 닉네임 */}
               <div style={s.section}>
                 <label style={s.sectionLabel}>닉네임</label>
-                <input
-                  type="text"
-                  value={nickname}
-                  onChange={e => setNickname(e.target.value)}
-                  required
-                  placeholder="친구들이 부를 이름"
-                  style={s.input}
-                />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type="text"
+                    value={nickname}
+                    onChange={e => {
+                      setNickname(e.target.value)
+                      setNicknameAvailable(null)
+                    }}
+                    required
+                    placeholder="친구들이 부를 이름"
+                    style={{
+                      ...s.input,
+                      flex: 1,
+                      borderColor: nicknameAvailable === true
+                        ? 'rgba(67,170,139,0.6)'
+                        : nicknameAvailable === false
+                        ? 'rgba(196,122,138,0.6)'
+                        : undefined,
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCheckNickname}
+                    disabled={nicknameChecking || !nickname.trim() || !nicknameChanged}
+                    style={{
+                      padding: '0 16px', fontSize: 13, fontWeight: 700,
+                      background: nicknameChanged ? 'linear-gradient(135deg, #6B82A0, #c47a8a)' : 'rgba(107,130,160,0.1)',
+                      color: nicknameChanged ? '#fff' : '#b0a8bc',
+                      border: 'none', borderRadius: 12, cursor: nicknameChanged ? 'pointer' : 'default',
+                      whiteSpace: 'nowrap', transition: 'all 0.15s',
+                      opacity: nicknameChecking ? 0.7 : 1,
+                    }}
+                  >
+                    {nicknameChecking ? '확인 중...' : '중복확인'}
+                  </button>
+                </div>
+                {nicknameAvailable === true && (
+                  <p style={{ margin: 0, fontSize: 12, color: '#43aa8b', fontWeight: 600 }}>사용 가능한 닉네임이에요</p>
+                )}
+                {nicknameAvailable === false && (
+                  <p style={{ margin: 0, fontSize: 12, color: '#c47a8a', fontWeight: 600 }}>이미 사용 중인 닉네임이에요</p>
+                )}
+                {nicknameChanged && nicknameAvailable === null && (
+                  <p style={{ margin: 0, fontSize: 12, color: '#9ca3af', fontWeight: 600 }}>닉네임을 변경했다면 중복 확인이 필요해요</p>
+                )}
               </div>
 
               {/* 이메일 */}
@@ -213,14 +301,15 @@ export default function EditProfile() {
                 <input
                   type="text"
                   value={phone}
-                  onChange={e => setPhone(e.target.value)}
+                  onChange={e => setPhone(formatPhone(e.target.value))}
                   placeholder="010-0000-0000"
+                  inputMode="numeric"
                   style={s.input}
                 />
               </div>
 
               {/* 버튼 */}
-              <div style={s.btnRow}>
+              <div style={s.btnRow} className="ep-btn-row">
                 <button
                   type="button"
                   onClick={() => navigate('/mypage')}
@@ -231,8 +320,8 @@ export default function EditProfile() {
                 </button>
                 <button
                   type="submit"
-                  disabled={saving || uploading}
-                  style={{ ...s.submitBtn, opacity: (saving || uploading) ? 0.7 : 1 }}
+                  disabled={saving || uploading || !canSubmit}
+                  style={{ ...s.submitBtn, opacity: (saving || uploading || !canSubmit) ? 0.5 : 1 }}
                 >
                   {saving ? '저장 중...' : '저장하기'}
                 </button>

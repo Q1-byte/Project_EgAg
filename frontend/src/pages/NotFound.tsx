@@ -68,6 +68,17 @@ const NotFound: React.FC = () => {
     }, []);
 
     const spaceStyle = `
+        @media (max-width: 640px) {
+          .nf-title { font-size: clamp(72px, 24vw, 100px) !important; }
+          .nf-h2 { font-size: 18px !important; margin: 12px 0 8px !important; }
+          .nf-desc { font-size: 14px !important; max-width: 90vw !important; }
+          .nf-btn { margin-top: 32px !important; padding: 12px 28px !important; font-size: 15px !important; }
+        }
+        @media (min-width: 641px) and (max-width: 860px) {
+          .nf-title { font-size: clamp(90px, 18vw, 130px) !important; }
+          .nf-h2 { font-size: 22px !important; }
+          .nf-desc { font-size: 15px !important; }
+        }
         @keyframes spaceBackground {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
@@ -182,14 +193,14 @@ const NotFound: React.FC = () => {
 
             {/* 텍스트 및 버튼 섹션 */}
             <div style={{ zIndex: 10, animation: 'pulse 4s infinite ease-in-out' }}>
-                <h1 style={{
+                <h1 className="nf-title" style={{
                     fontSize: 'clamp(100px, 18vw, 150px)', fontWeight: 900, margin: 0, lineHeight: 1,
                     color: '#a855f7', letterSpacing: '-2px',
                     textShadow: '0 0 30px rgba(168, 85, 247, 0.8), 0 0 60px rgba(168, 85, 247, 0.4), 0 0 5px #fff',
                 }}>404</h1>
-                <h2 style={{ fontSize: '26px', fontWeight: 700, margin: '20px 0 10px', color: '#ececec' }}>블랙홀에 빠진 병아리? 🥺</h2>
-                <p style={{ fontSize: '16px', color: '#b0a6c0', lineHeight: '1.7', maxWidth: '450px', margin: '0 auto' }}>삐약이가 길을 잃었어요! 안전한 기지로 복귀시켜 줄까요?</p>
-                <button onClick={() => navigate('/')} style={{ marginTop: '50px', padding: '15px 40px', fontSize: '18px', fontWeight: 800, backgroundColor: '#6366f1', color: 'white', border: 'none', borderRadius: '30px', cursor: 'pointer' }}>지구(홈)로 돌아가기 🚀</button>
+                <h2 className="nf-h2" style={{ fontSize: '26px', fontWeight: 700, margin: '20px 0 10px', color: '#ececec' }}>블랙홀에 빠진 병아리? 🥺</h2>
+                <p className="nf-desc" style={{ fontSize: '16px', color: '#b0a6c0', lineHeight: '1.7', maxWidth: '450px', margin: '0 auto' }}>삐약이가 길을 잃었어요! 안전한 기지로 복귀시켜 줄까요?</p>
+                <button className="nf-btn" onClick={() => navigate('/')} style={{ marginTop: '50px', padding: '15px 40px', fontSize: '18px', fontWeight: 800, backgroundColor: '#6366f1', color: 'white', border: 'none', borderRadius: '30px', cursor: 'pointer' }}>지구(홈)로 돌아가기 🚀</button>
             </div>
         </div>
     );

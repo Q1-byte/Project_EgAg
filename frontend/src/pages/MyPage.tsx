@@ -2,15 +2,17 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/useAuthStore'
 import Header from '../components/Header'
-import { getMyProfile, updateMyProfile, changePassword, getMyArtworks, uploadProfilePhoto, toggleArtworkVisibility, deleteArtwork } from '../api/user'
+import { getMyProfile, updateMyProfile, changePassword, getMyArtworks, uploadProfilePhoto, toggleArtworkVisibility, deleteArtwork, getFollowers, getFollowing } from '../api/user'
 import { updateArtworkTitle } from '../api/artwork'
 import type { UserProfile, ArtworkSummary } from '../api/user'
+import type { UserResponse } from '../types'
+import { Camera, Pencil, Globe, Lock, Download, Trash2, Ticket, ArrowRight, Eye, X } from 'lucide-react'
 
 type Tab = 'profile' | 'gallery'
 
 export default function MyPage() {
   const navigate = useNavigate()
-  const { isAuthenticated, nickname, tokenBalance, logout, setProfileImageUrl } = useAuthStore()
+  const { isAuthenticated, setProfileImageUrl } = useAuthStore()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [tab, setTab] = useState<Tab>('profile')
@@ -22,34 +24,15 @@ export default function MyPage() {
   const [profileError, setProfileError] = useState(false)
   const [titleModal, setTitleModal] = useState<ArtworkSummary | null>(null)
   const [modalTitle, setModalTitle] = useState('')
-
-  // 내 정보 변경 패널 토글
-  const [showEdit, setShowEdit] = useState(false)
-
-  // 기본 정보 변경 폼
-  const [editNickname, setEditNickname] = useState('')
-  const [editPhone, setEditPhone] = useState('')
-  const [editEmail, setEditEmail] = useState('')
-  const [editLoading, setEditLoading] = useState(false)
-  const [editMsg, setEditMsg] = useState('')
-  const [editError, setEditError] = useState('')
-
-  // 비밀번호 변경 폼
-  const [curPw, setCurPw] = useState('')
-  const [newPw, setNewPw] = useState('')
-  const [newPw2, setNewPw2] = useState('')
-  const [pwLoading, setPwLoading] = useState(false)
-  const [pwMsg, setPwMsg] = useState('')
-  const [pwError, setPwError] = useState('')
+  const [followModal, setFollowModal] = useState<'followers' | 'following' | null>(null)
+  const [followList, setFollowList] = useState<UserResponse[]>([])
+  const [followListLoading, setFollowListLoading] = useState(false)
 
   useEffect(() => {
     if (!isAuthenticated) { navigate('/login'); return }
     getMyProfile()
       .then(p => {
         setProfile(p)
-        setEditNickname(p.nickname || '')
-        setEditPhone(p.phone || '')
-        setEditEmail(p.subEmail || '')
         if (p.profileImageUrl) setProfileImageUrl(p.profileImageUrl)
       })
       .catch(() => setProfileError(true))
@@ -71,45 +54,12 @@ export default function MyPage() {
       const updated = await uploadProfilePhoto(file)
       setProfile(updated)
       if (updated.profileImageUrl) setProfileImageUrl(updated.profileImageUrl)
-    } catch {
-      // 실패 시 조용히 처리
-    } finally {
-      setPhotoLoading(false)
-    }
-  }
-
-  const handleUpdateProfile = async () => {
-    setEditError(''); setEditMsg(''); setEditLoading(true)
-    try {
-      const updated = await updateMyProfile({ nickname: editNickname, phone: editPhone, email: editEmail })
-      setProfile(updated)
-      setEditMsg('정보가 성공적으로 변경되었습니다!')
-    } catch (err: any) {
-      setEditError(err?.response?.data?.error?.message || err?.response?.data?.message || '변경에 실패했습니다.')
-    } finally {
-      setEditLoading(false)
-    }
-  }
-
-  const handleChangePassword = async () => {
-    setPwError(''); setPwMsg('')
-    if (newPw !== newPw2) { setPwError('새 비밀번호가 일치하지 않습니다.'); return }
-    if (newPw.length < 8) { setPwError('비밀번호는 8자 이상이어야 합니다.'); return }
-    setPwLoading(true)
-    try {
-      await changePassword({ currentPassword: curPw, newPassword: newPw })
-      setPwMsg('비밀번호가 변경되었습니다!')
-      setCurPw(''); setNewPw(''); setNewPw2('')
-    } catch (err: any) {
-      setPwError(err?.response?.data?.error?.message || err?.response?.data?.message || '변경에 실패했습니다.')
-    } finally {
-      setPwLoading(false)
-    }
+    } catch { /* 실패 시 조용히 처리 */ }
+    finally { setPhotoLoading(false) }
   }
 
   const handleToggleVisibility = async (id: string, currentIsPublic: boolean) => {
     if (!currentIsPublic) {
-      // 비공개 → 공개: 확인 다이얼로그
       if (!window.confirm('이 작품을 갤러리에 공개하시겠습니까?\n공개된 작품은 갤러리 페이지에서 모든 사용자에게 보여집니다.')) return
     }
     try {
@@ -132,41 +82,66 @@ export default function MyPage() {
     const a = document.createElement('a')
     a.download = `${title || '작품'}.png`
     if (imageUrl.startsWith('data:')) {
-      // base64 데이터 URI는 바로 연결
-      a.href = imageUrl
-      a.click()
+      a.href = imageUrl; a.click()
     } else {
       try {
         const res = await fetch(imageUrl)
         const blob = await res.blob()
-        a.href = URL.createObjectURL(blob)
-        a.click()
+        a.href = URL.createObjectURL(blob); a.click()
         URL.revokeObjectURL(a.href)
-      } catch {
-        window.open(imageUrl, '_blank')
-      }
+      } catch { window.open(imageUrl, '_blank') }
     }
   }
 
-  const handleLogout = () => { logout(); navigate('/') }
+  const openFollowModal = async (type: 'followers' | 'following') => {
+    if (!profile) return
+    setFollowModal(type)
+    setFollowListLoading(true)
+    try {
+      const data = type === 'followers' ? await getFollowers(profile.id) : await getFollowing(profile.id)
+      setFollowList(data)
+    } catch { setFollowList([]) }
+    finally { setFollowListLoading(false) }
+  }
+
+  const avatarSrc = profile?.profileImageUrl
+    ? (profile.profileImageUrl.startsWith('/uploads') ? `http://localhost:8080${profile.profileImageUrl}` : profile.profileImageUrl)
+    : null
 
   return (
-    <div style={s.bg}>
+    <div style={s.bg} className="mp-bg">
       <Header />
+      <style>{`
+        @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+        .mp-tab:hover { color: #6B82A0 !important; }
+        .mp-avatar-wrap:hover .mp-avatar-overlay { opacity: 1 !important; }
+        .mp-gallery-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(107,130,160,0.18) !important; }
+        .mp-btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+        .mp-btn-secondary:hover { background: rgba(107,130,160,0.14) !important; }
+        @media (max-width: 640px) {
+          .mp-bg { padding: 80px 12px 60px !important; }
+          .mp-card { padding: 28px 20px !important; }
+          .mp-stat-row { padding: 12px 16px !important; }
+          .mp-btn-row { flex-direction: column !important; }
+          .mp-follow-modal { padding: 24px 0 16px !important; }
+        }
+        @media (min-width: 641px) and (max-width: 860px) {
+          .mp-card { padding: 32px 28px !important; }
+        }
+      `}</style>
 
       <main style={s.main}>
-        <h1 style={s.title}>마이페이지</h1>
+        <h1 style={s.pageTitle}>마이페이지</h1>
 
         {/* 탭 */}
         <div style={s.tabRow}>
           {([
-            { key: 'profile', label: '👤 내 프로필' },
-            { key: 'gallery', label: '🖼 내 갤러리' },
+            { key: 'profile', label: '내 프로필' },
+            { key: 'gallery', label: '내 갤러리' },
           ] as { key: Tab; label: string }[]).map(t => (
-            <button
-              key={t.key}
+            <button key={t.key} className="mp-tab"
               style={{ ...s.tabBtn, ...(tab === t.key ? s.tabBtnActive : {}) }}
-              onClick={() => { setTab(t.key); setShowEdit(false) }}
+              onClick={() => setTab(t.key)}
             >
               {t.label}
             </button>
@@ -175,122 +150,92 @@ export default function MyPage() {
 
         {/* 내 프로필 */}
         {tab === 'profile' && (
-          <div style={s.card}>
+          <div style={s.card} className="mp-card">
             {loadingProfile ? (
               <p style={s.loadingText}>불러오는 중...</p>
             ) : profileError ? (
               <div style={{ textAlign: 'center', color: '#8a7a9a' }}>
                 <p style={{ fontSize: 15, marginBottom: 16 }}>프로필 정보를 불러오지 못했어요.</p>
-                <button style={s.secondaryBtn} onClick={() => { setProfileError(false); setLoadingProfile(true); getMyProfile().then(p => { setProfile(p); setEditNickname(p.nickname || ''); setEditPhone(p.phone || '') }).catch(() => setProfileError(true)).finally(() => setLoadingProfile(false)) }}>
+                <button className="mp-btn-secondary" style={s.btnSecondary}
+                  onClick={() => {
+                    setProfileError(false); setLoadingProfile(true)
+                    getMyProfile().then(p => { setProfile(p) }).catch(() => setProfileError(true)).finally(() => setLoadingProfile(false))
+                  }}>
                   다시 시도
                 </button>
               </div>
             ) : profile ? (
               <>
-                {/* 프로필 사진 */}
-                <div style={s.avatarWrap} onClick={() => fileInputRef.current?.click()} title="클릭하여 사진 변경">
+                {/* 아바타 */}
+                <div className="mp-avatar-wrap" style={s.avatarWrap} onClick={() => fileInputRef.current?.click()}>
                   {photoLoading ? (
-                    <div style={s.avatarPlaceholder}><span style={{ fontSize: 24 }}>⏳</span></div>
-                  ) : profile.profileImageUrl ? (
-                    <img src={profile.profileImageUrl.startsWith('/uploads') ? `http://localhost:8080${profile.profileImageUrl}` : profile.profileImageUrl} alt="프로필" style={s.avatar} />
+                    <div style={s.avatarInner}>
+                      <div style={{ fontSize: 28, color: '#6B82A0' }}>...</div>
+                    </div>
+                  ) : avatarSrc ? (
+                    <img src={avatarSrc} alt="프로필" style={s.avatarImg} />
                   ) : (
-                    <div style={s.avatarPlaceholder}><span style={{ fontSize: 40 }}>👤</span></div>
+                    <div style={s.avatarInner}>
+                      <span style={s.avatarInitial}>{profile.nickname?.[0]?.toUpperCase()}</span>
+                    </div>
                   )}
-                  <div style={s.avatarEdit}>📷</div>
+                  <div className="mp-avatar-overlay" style={s.avatarOverlay}>
+                    <Camera size={20} color="#fff" />
+                  </div>
                 </div>
                 <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoChange} />
-                <p style={s.avatarHint}>클릭하여 프로필 사진 변경</p>
+                <p style={s.avatarHint}>클릭하여 사진 변경</p>
 
-                {/* 회원 정보 전체 */}
-                <div style={s.profileGrid}>
+                <h2 style={s.nicknameText}>{profile.nickname}</h2>
+
+                {/* 통계 */}
+                <div style={s.statRow} className="mp-stat-row">
+                  <div style={{ ...s.statItem, cursor: 'pointer' }} onClick={() => openFollowModal('followers')}>
+                    <span style={s.statValue}>{profile.followerCount}</span>
+                    <span style={{ ...s.statLabel, textDecoration: 'underline dotted' }}>팔로워</span>
+                  </div>
+                  <div style={s.statDivider} />
+                  <div style={{ ...s.statItem, cursor: 'pointer' }} onClick={() => openFollowModal('following')}>
+                    <span style={s.statValue}>{profile.followingCount}</span>
+                    <span style={{ ...s.statLabel, textDecoration: 'underline dotted' }}>팔로잉</span>
+                  </div>
+                  <div style={s.statDivider} />
+                  <div style={s.statItem}>
+                    <span style={{ ...s.statValue, color: '#c47a8a' }}>{profile.tokenBalance}</span>
+                    <span style={s.statLabel}>토큰</span>
+                  </div>
+                </div>
+
+                {/* 정보 */}
+                <div style={s.infoGrid}>
                   {[
                     { label: '이름', value: profile.name || '—' },
-                    { label: '닉네임', value: profile.nickname },
+                    { label: '닉네임', value: profile.nickname || '—' },
                     { label: '이메일', value: profile.subEmail || '—' },
                     { label: '전화번호', value: profile.phone || '—' },
                     { label: '가입 방법', value: profile.provider === 'email' ? '이메일' : `소셜 (${profile.provider})` },
                     { label: '가입일', value: new Date(profile.createdAt).toLocaleDateString('ko-KR') },
                   ].map(item => (
-                    <div key={item.label} style={s.profileItem}>
-                      <span style={s.profileLabel}>{item.label}</span>
-                      <span style={s.profileValue}>{item.value}</span>
+                    <div key={item.label} style={s.infoRow}>
+                      <span style={s.infoLabel}>{item.label}</span>
+                      <span style={s.infoValue}>{item.value}</span>
                     </div>
                   ))}
-                  <div style={s.profileItem}>
-                    <span style={s.profileLabel}>토큰 잔액</span>
-                    <span style={{ ...s.profileValue, color: '#6B82A0', fontWeight: 800 }}>🎟 {profile.tokenBalance}개</span>
-                  </div>
                 </div>
 
-                {/* 통계 */}
-                <div style={s.statRow}>
-                  <div style={s.statBox}>
-                    <span style={s.statNum}>{profile.followerCount}</span>
-                    <span style={s.statLabel}>팔로워</span>
-                  </div>
-                  <div style={s.statDivider} />
-                  <div style={s.statBox}>
-                    <span style={s.statNum}>{profile.followingCount}</span>
-                    <span style={s.statLabel}>팔로잉</span>
-                  </div>
-                </div>
-
-                {/* 버튼들 */}
-                <div style={{ display: 'flex', gap: 10, width: '100%' }}>
-                  <button style={{ ...s.primaryBtn, flex: 1 }} onClick={() => navigate('/token-shop')}>
-                    🎟 토큰 충전
+                {/* 버튼 */}
+                <div style={{ display: 'flex', gap: 10, width: '100%' }} className="mp-btn-row">
+                  <button className="mp-btn-primary" style={{ ...s.btnPrimary, flex: 1 }}
+                    onClick={() => navigate('/token-shop')}>
+                    <Ticket size={15} />
+                    토큰 충전
                   </button>
-                  <button
-                    style={{ ...s.secondaryBtn, flex: 1 }}
-                    onClick={() => navigate('/profile/edit')}
-                  >
-                    ✏️ 내 정보 변경
+                  <button className="mp-btn-secondary" style={{ ...s.btnSecondary, flex: 1 }}
+                    onClick={() => navigate('/profile/edit')}>
+                    <Pencil size={15} />
+                    내 정보 변경
                   </button>
                 </div>
-
-                {/* 내 정보 변경 패널 (인라인) */}
-                {showEdit && (
-                  <div style={s.editPanel}>
-                    <h3 style={s.formSection}>기본 정보 변경</h3>
-                    <label style={s.label}>이름</label>
-                    <input style={{ ...s.input, background: 'rgba(200,195,210,0.25)', color: '#8a7a9a', cursor: 'not-allowed' }} value={profile.name || ''} readOnly />
-                    <label style={s.label}>닉네임</label>
-                    <input style={s.input} value={editNickname} onChange={e => setEditNickname(e.target.value)} placeholder="닉네임" />
-                    <label style={s.label}>이메일</label>
-                    <input style={s.input} type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} placeholder="이메일" />
-                    <label style={s.label}>전화번호</label>
-                    <input style={s.input} value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="전화번호" />
-                    {editError && <div style={s.errorBox}>{editError}</div>}
-                    {editMsg && <div style={s.successBox}>{editMsg}</div>}
-                    <button style={{ ...s.primaryBtn, width: '100%', opacity: editLoading ? 0.6 : 1 }} onClick={handleUpdateProfile} disabled={editLoading}>
-                      {editLoading ? '변경 중...' : '정보 변경하기'}
-                    </button>
-
-                    <div style={s.divider} />
-
-                    <h3 style={s.formSection}>비밀번호 변경</h3>
-                    {profile.provider !== 'email' && (
-                      <p style={{ fontSize: 13, color: '#c47a8a', marginBottom: 12, alignSelf: 'flex-start' }}>
-                        소셜 로그인 계정은 비밀번호를 변경할 수 없습니다.
-                      </p>
-                    )}
-                    <label style={s.label}>현재 비밀번호</label>
-                    <input style={s.input} type="password" value={curPw} onChange={e => setCurPw(e.target.value)} placeholder="현재 비밀번호" disabled={profile.provider !== 'email'} />
-                    <label style={s.label}>새 비밀번호</label>
-                    <input style={s.input} type="password" value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="새 비밀번호 (8자 이상)" disabled={profile.provider !== 'email'} />
-                    <label style={s.label}>새 비밀번호 확인</label>
-                    <input style={s.input} type="password" value={newPw2} onChange={e => setNewPw2(e.target.value)} placeholder="새 비밀번호 재입력" disabled={profile.provider !== 'email'} />
-                    {pwError && <div style={s.errorBox}>{pwError}</div>}
-                    {pwMsg && <div style={s.successBox}>{pwMsg}</div>}
-                    <button
-                      style={{ ...s.primaryBtn, width: '100%', opacity: (pwLoading || profile.provider !== 'email') ? 0.5 : 1 }}
-                      onClick={handleChangePassword}
-                      disabled={pwLoading || profile.provider !== 'email'}
-                    >
-                      {pwLoading ? '변경 중...' : '비밀번호 변경하기'}
-                    </button>
-                  </div>
-                )}
               </>
             ) : (
               <p style={s.loadingText}>프로필을 불러올 수 없습니다.</p>
@@ -300,126 +245,188 @@ export default function MyPage() {
 
         {/* 내 갤러리 */}
         {tab === 'gallery' && (
-          <div style={{ width: '100%', maxWidth: 800 }}>
+          <div style={{ width: '100%', maxWidth: 860 }}>
             {loadingGallery ? (
-              <p style={s.loadingText}>불러오는 중...</p>
+              <div style={{ textAlign: 'center', padding: '60px 0', color: '#9ca3af', fontSize: 15, fontWeight: 600 }}>
+                불러오는 중...
+              </div>
             ) : artworks.length === 0 ? (
               <div style={s.emptyBox}>
-                <span style={{ fontSize: 48 }}>🎨</span>
-                <p style={s.emptyText}>아직 그린 작품이 없어요</p>
-                <button style={s.primaryBtn} onClick={() => navigate('/canvas')}>첫 작품 그리러 가기</button>
+                <div style={{ fontSize: 40, marginBottom: 12, opacity: 0.5 }}>🎨</div>
+                <p style={{ margin: '0 0 20px', fontSize: 15, color: '#9ca3af', fontWeight: 600 }}>아직 그린 작품이 없어요</p>
+                <button className="mp-btn-primary" style={s.btnPrimary} onClick={() => navigate('/canvas')}>
+                  <ArrowRight size={15} />
+                  첫 작품 그리러 가기
+                </button>
               </div>
             ) : (
-              <div style={s.galleryGrid}>
-                {artworks.map(art => (
-                  <div key={art.id} style={{ ...s.galleryCard, cursor: 'pointer' }}
-                    onClick={() => { setTitleModal(art); setModalTitle(art.title || '') }}
-                  >
-                    {/* 두 이미지 나란히 */}
-                    <div style={s.galleryImgRow}>
-                      <div style={s.galleryImgWrap}>
-                        <p style={s.galleryImgLabel}>내 그림</p>
-                        {art.userImageData
-                          ? <img src={art.userImageData} alt="내 그림" style={s.galleryImg} />
-                          : <div style={s.galleryImgPlaceholder}>✏️</div>
+              <>
+                <div style={s.galleryHeader}>
+                  <h2 style={s.galleryTitle}>내 작품</h2>
+                  <span style={s.galleryCount}>{artworks.length}개</span>
+                </div>
+                <div style={s.galleryGrid}>
+                  {artworks.map((art, i) => (
+                    <div key={art.id} className="mp-gallery-card" style={{ ...s.galleryCard, animation: `fadeUp ${0.3 + i * 0.04}s ease both` }}>
+                      {/* 이미지 영역 */}
+                      <div style={s.galleryImgRow} onClick={() => {
+                        if (art.title) {
+                          navigate(`/artwork/${art.id}`)
+                        } else {
+                          setTitleModal(art); setModalTitle('')
                         }
+                      }}>
+                        <div style={s.galleryImgWrap}>
+                          <p style={s.galleryImgLabel}>내 그림</p>
+                          {art.userImageData
+                            ? <img src={art.userImageData} alt="내 그림" style={s.galleryImg} />
+                            : <div style={s.galleryImgPlaceholder}><Pencil size={24} color="#c4b5d0" /></div>
+                          }
+                        </div>
+                        <div style={s.galleryImgWrap}>
+                          <p style={s.galleryImgLabel}>AI 그림</p>
+                          {art.imageUrl
+                            ? <img src={art.imageUrl} alt="AI 그림" style={s.galleryImg} />
+                            : <div style={s.galleryImgPlaceholder}><Eye size={24} color="#c4b5d0" /></div>
+                          }
+                        </div>
                       </div>
-                      <div style={s.galleryImgWrap}>
-                        <p style={s.galleryImgLabel}>AI 그림</p>
-                        {art.imageUrl
-                          ? <img src={art.imageUrl} alt="AI 그림" style={s.galleryImg} />
-                          : <div style={s.galleryImgPlaceholder}>🤖</div>
-                        }
+
+                      {/* 정보 */}
+                      <div style={s.galleryInfo}>
+                        <p style={s.galleryDate}>
+                          {new Date(art.createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace(/\.$/, '')}
+                        </p>
+                        <p style={s.galleryArtTitle}>{art.title || '제목 없음'}</p>
+                        <div style={s.galleryMeta}>
+                          {art.topic && <span>#{art.topic}</span>}
+                          <span style={{ color: art.isPublic ? '#43aa8b' : '#c47a8a' }}>
+                            {art.isPublic ? '공개' : '비공개'}
+                          </span>
+                          <span>좋아요 {art.likeCount}</span>
+                        </div>
+                        <div style={s.galleryBtns} onClick={e => e.stopPropagation()}>
+                          <button style={{ ...s.galleryBtn, color: art.isPublic ? '#43aa8b' : '#8a7a9a' }}
+                            onClick={() => handleToggleVisibility(art.id, art.isPublic)}
+                            title={art.isPublic ? '비공개로 전환' : '갤러리에 공개'}>
+                            {art.isPublic ? <Globe size={13} /> : <Lock size={13} />}
+                          </button>
+                          <button style={s.galleryBtn}
+                            onClick={() => {
+                              if (art.userImageData) handleDownload(art.userImageData, `${art.title || '작품'}-내그림`)
+                              if (art.imageUrl) handleDownload(art.imageUrl, `${art.title || '작품'}-AI그림`)
+                            }}
+                            title="PNG로 저장">
+                            <Download size={13} />
+                          </button>
+                          <button style={{ ...s.galleryBtn, color: '#c47a8a' }}
+                            onClick={() => handleDeleteArtwork(art.id)}
+                            title="삭제">
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                    <div style={s.galleryInfo}>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
-                        <p style={s.galleryDate}>{new Date(art.createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace(/\.$/, '')}</p>
-                        <p style={s.galleryTitle}>{art.title || 'hi!'}</p>
-                      </div>
-                      <p style={s.galleryMeta}>
-                        {art.topic && <span>#{art.topic} · </span>}
-                        ❤️ {art.likeCount}
-                        <span style={{ color: art.isPublic ? '#43aa8b' : '#c47a8a' }}>
-                          {art.isPublic ? ' · 공개' : ' · 비공개'}
-                        </span>
-                      </p>
-                      <div style={s.galleryBtns} onClick={e => e.stopPropagation()}>
-                        <button
-                          style={{ ...s.galleryBtn, color: art.isPublic ? '#43aa8b' : '#8a7a9a' }}
-                          onClick={() => handleToggleVisibility(art.id, art.isPublic)}
-                          title={art.isPublic ? '비공개로 전환' : '갤러리에 공개'}
-                        >
-                          {art.isPublic ? '🌐 공개' : '🔒 비공개'}
-                        </button>
-                        <button
-                          style={s.galleryBtn}
-                          onClick={() => {
-                            if (art.userImageData) handleDownload(art.userImageData, `${art.title || '작품'}-내그림`)
-                            if (art.imageUrl) handleDownload(art.imageUrl, `${art.title || '작품'}-AI그림`)
-                          }}
-                          title="두 이미지 모두 PNG로 저장"
-                        >
-                          ⬇ 저장
-                        </button>
-                        <button
-                          style={{ ...s.galleryBtn, color: '#c47a8a' }}
-                          onClick={() => handleDeleteArtwork(art.id)}
-                          title="목록에서 삭제"
-                        >
-                          🗑 삭제
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         )}
       </main>
 
-      {/* 제목 입력 모달 */}
+      {/* 팔로워/팔로잉 모달 */}
+      {followModal && (
+        <div style={s.modalBackdrop} onClick={() => setFollowModal(null)}>
+          <div style={{ ...s.modalCard, maxWidth: 400, padding: '32px 0 20px', gap: 0 }} onClick={e => e.stopPropagation()}>
+            <button onClick={() => setFollowModal(null)} style={s.modalClose}><X size={18} /></button>
+            <p style={{ ...s.modalEyebrow, marginBottom: 20, paddingLeft: 28 }}>
+              {followModal === 'followers' ? '팔로워' : '팔로잉'}
+            </p>
+            {followListLoading ? (
+              <p style={{ ...s.loadingText, textAlign: 'center', padding: '32px 0' }}>불러오는 중...</p>
+            ) : followList.length === 0 ? (
+              <p style={{ textAlign: 'center', padding: '32px 0', color: '#9ca3af', fontSize: 14, fontWeight: 600 }}>
+                {followModal === 'followers' ? '아직 팔로워가 없어요' : '팔로우한 사람이 없어요'}
+              </p>
+            ) : (
+              <div style={{ maxHeight: 420, overflowY: 'auto', width: '100%' }}>
+                {followList.map(u => {
+                  const uAvatar = u.profileImageUrl
+                    ? (u.profileImageUrl.startsWith('/uploads') ? `http://localhost:8080${u.profileImageUrl}` : u.profileImageUrl)
+                    : null
+                  return (
+                    <div key={u.id}
+                      onClick={() => { setFollowModal(null); navigate(`/user/${u.id}`) }}
+                      style={s.followListItem}
+                      onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = 'rgba(107,130,160,0.06)'}
+                      onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = 'transparent'}
+                    >
+                      <div style={s.followListAvatar}>
+                        {uAvatar
+                          ? <img src={uAvatar} alt={u.nickname} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                          : <span style={s.followListInitial}>{u.nickname?.[0]?.toUpperCase()}</span>
+                        }
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={s.followListNickname}>{u.nickname}</p>
+                        <p style={s.followListSub}>팔로워 {u.followerCount}</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 작품 감상 모달 */}
       {titleModal && (
-        <div
-          style={s.modalBackdrop}
-          onClick={() => setTitleModal(null)}
-        >
+        <div style={s.modalBackdrop} onClick={() => setTitleModal(null)}>
           <div style={s.modalCard} onClick={e => e.stopPropagation()}>
-            <p style={s.modalEyebrow}>✦ 작품 감상하기</p>
-            <h2 style={s.modalTitle}>이 작품의 제목을 지어주세요</h2>
-            <p style={s.modalSub}>제목을 입력하고 작품 상세 페이지로 이동해요</p>
-            <input
-              type="text"
-              value={modalTitle}
-              onChange={e => setModalTitle(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter' && modalTitle.trim()) {
-                  updateArtworkTitle(titleModal.id, modalTitle.trim()).catch(() => {})
-                  navigate(`/artwork/${titleModal.id}`, { state: { title: modalTitle.trim() } })
-                  setTitleModal(null)
-                }
-              }}
-              placeholder="멋진 제목을 입력해주세요..."
-              style={s.modalInput}
-              autoFocus
-            />
+            <button onClick={() => setTitleModal(null)} style={s.modalClose}>✕</button>
+            <p style={s.modalEyebrow}>작품 제목 짓기</p>
+            <h2 style={s.modalTitle}>이 작품, 이름이 없어요</h2>
+            <p style={s.modalSub}>제목을 지어줘야 감상 페이지로 이동할 수 있어요</p>
+            <div style={{ width: '100%', position: 'relative' }}>
+              <input
+                type="text"
+                value={modalTitle}
+                onChange={e => setModalTitle(e.target.value.slice(0, 12))}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && modalTitle.trim()) {
+                    updateArtworkTitle(titleModal.id, modalTitle.trim()).catch(() => {})
+                    navigate(`/artwork/${titleModal.id}`, { state: { title: modalTitle.trim() } })
+                    setTitleModal(null)
+                  }
+                }}
+                maxLength={12}
+                placeholder="멋진 제목을 입력해주세요..."
+                style={s.modalInput}
+                autoFocus
+              />
+              <span style={{
+                position: 'absolute', right: 14, bottom: 10,
+                fontSize: 11, fontWeight: 600,
+                color: modalTitle.length >= 12 ? '#c47a8a' : '#b0a8bc',
+              }}>
+                {modalTitle.length}/12
+              </span>
+            </div>
             <div style={{ display: 'flex', gap: 10, width: '100%' }}>
-              <button
-                style={{ ...s.primaryBtn, flex: 2, opacity: modalTitle.trim() ? 1 : 0.5 }}
+              <button className="mp-btn-primary"
+                style={{ ...s.btnPrimary, flex: 2, opacity: modalTitle.trim() ? 1 : 0.5, justifyContent: 'center' }}
                 disabled={!modalTitle.trim()}
                 onClick={() => {
                   updateArtworkTitle(titleModal.id, modalTitle.trim()).catch(() => {})
                   navigate(`/artwork/${titleModal.id}`, { state: { title: modalTitle.trim() } })
                   setTitleModal(null)
-                }}
-              >
+                }}>
                 감상하러 가기
               </button>
-              <button
-                style={{ ...s.secondaryBtn, flex: 1 }}
-                onClick={() => setTitleModal(null)}
-              >
+              <button className="mp-btn-secondary" style={{ ...s.btnSecondary, flex: 1, justifyContent: 'center' }}
+                onClick={() => setTitleModal(null)}>
                 취소
               </button>
             </div>
@@ -434,205 +441,211 @@ const s: Record<string, React.CSSProperties> = {
   bg: {
     minHeight: '100vh',
     background: 'linear-gradient(160deg, #f5f0f8 0%, #ede8f2 40%, #f0eee9 100%)',
-    display: 'flex', flexDirection: 'column',
-  },
-  header: {
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '0 28px', height: 70, overflow: 'hidden',
-    background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(16px)',
-    position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)',
-    width: 'calc(100% - 48px)', maxWidth: 960,
-    borderRadius: 100,
-    boxShadow: '0 4px 32px rgba(0,0,0,0.08)',
-    border: '1px solid rgba(255,255,255,0.8)',
-    zIndex: 100,
-  },
-  logo: { display: 'flex', alignItems: 'center', cursor: 'pointer' },
-  userGreet: { fontSize: 14, fontWeight: 600, color: '#4a4a6a' },
-  tokenBadge: {
-    fontSize: 13, fontWeight: 700, color: '#6B82A0',
-    background: 'rgba(107,130,160,0.12)', border: '1px solid rgba(107,130,160,0.25)',
-    borderRadius: 20, padding: '4px 14px', cursor: 'pointer',
-  },
-  navBtn: {
-    fontSize: 13, fontWeight: 500, color: '#8a8aaa',
-    background: 'none', border: '1px solid #ddd',
-    borderRadius: 20, padding: '6px 16px', cursor: 'pointer',
+    padding: '110px 20px 80px',
   },
   main: {
-    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-    padding: '130px 24px 80px',
+    maxWidth: 860, margin: '0 auto',
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
+    animation: 'fadeUp 0.5s ease both',
   },
-  title: {
-    fontSize: 32, fontWeight: 800, margin: '32px 0 32px', letterSpacing: 2,
-    padding: '4px 8px',
-    background: 'linear-gradient(135deg, #3a5a8a 0%, #c47a8a 100%)',
+  pageTitle: {
+    fontSize: 28, fontWeight: 900, margin: '0 0 28px',
+    background: 'linear-gradient(135deg, #c47a8a 0%, #6B82A0 100%)',
     WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+    letterSpacing: -0.5,
   },
   tabRow: {
-    display: 'flex', gap: 10, marginBottom: 32,
-    background: 'rgba(255,255,255,0.5)', borderRadius: 50,
-    padding: '6px 8px', border: '1px solid rgba(255,255,255,0.8)',
+    display: 'flex', gap: 8, marginBottom: 32,
+    background: 'rgba(255,255,255,0.55)', borderRadius: 50,
+    padding: '5px 6px', border: '1px solid rgba(255,255,255,0.8)',
+    boxShadow: '0 2px 12px rgba(107,130,160,0.08)',
   },
   tabBtn: {
-    padding: '10px 28px', borderRadius: 50, border: 'none',
+    padding: '9px 26px', borderRadius: 50, border: 'none',
     background: 'transparent', fontSize: 14, fontWeight: 600,
-    color: '#8a7a9a', cursor: 'pointer', transition: 'all 0.15s',
+    color: '#9ca3af', cursor: 'pointer', transition: 'all 0.15s',
   },
   tabBtnActive: {
     background: 'linear-gradient(135deg, #6B82A0, #c47a8a)',
     color: '#fff', boxShadow: '0 2px 12px rgba(107,130,160,0.25)',
   },
   card: {
-    width: '100%', maxWidth: 520,
-    background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(245,240,248,0.8) 100%)',
-    borderRadius: 28, padding: '40px',
-    boxShadow: '0 8px 40px rgba(107,130,160,0.12)',
-    border: '1.5px solid rgba(255,255,255,0.7)',
+    width: '100%', maxWidth: 480,
+    background: 'linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(245,240,248,0.85) 100%)',
+    borderRadius: 28, padding: '44px 40px',
+    boxShadow: '0 8px 40px rgba(107,130,160,0.13)',
+    border: '1.5px solid rgba(255,255,255,0.75)',
     display: 'flex', flexDirection: 'column', alignItems: 'center',
   },
   avatarWrap: {
-    position: 'relative', cursor: 'pointer', marginBottom: 6,
-  },
-  avatar: {
-    width: 96, height: 96, borderRadius: '50%', objectFit: 'cover',
-    border: '3px solid rgba(107,130,160,0.25)', display: 'block',
-  },
-  avatarPlaceholder: {
+    position: 'relative', cursor: 'pointer',
     width: 96, height: 96, borderRadius: '50%',
-    background: 'linear-gradient(135deg, rgba(107,130,160,0.15), rgba(196,122,138,0.12))',
-    border: '2px solid rgba(107,130,160,0.2)',
+    overflow: 'hidden', marginBottom: 6, flexShrink: 0,
+    border: '3px solid rgba(255,255,255,0.9)',
+    boxShadow: '0 4px 20px rgba(107,130,160,0.22)',
+  },
+  avatarImg: {
+    width: '100%', height: '100%', objectFit: 'cover', display: 'block',
+  },
+  avatarInner: {
+    width: '100%', height: '100%',
+    background: 'linear-gradient(135deg, rgba(196,122,138,0.15), rgba(107,130,160,0.15))',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
-  avatarEdit: {
-    position: 'absolute', bottom: 0, right: 0,
-    width: 28, height: 28, borderRadius: '50%',
-    background: 'linear-gradient(135deg, #6B82A0, #c47a8a)',
+  avatarInitial: {
+    fontSize: 34, fontWeight: 900,
+    background: 'linear-gradient(135deg, #c47a8a, #6B82A0)',
+    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+  },
+  avatarOverlay: {
+    position: 'absolute', inset: 0,
+    background: 'rgba(0,0,0,0.38)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+    opacity: 0, transition: 'opacity 0.18s',
   },
-  avatarHint: { fontSize: 11, color: '#a09ab0', margin: '0 0 20px' },
-  profileGrid: { width: '100%', display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 },
-  profileItem: {
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '10px 16px', borderRadius: 12,
-    background: 'rgba(245,240,248,0.6)', border: '1px solid rgba(107,130,160,0.1)',
+  avatarHint: { fontSize: 11, color: '#b0a8bc', margin: '0 0 4px' },
+  nicknameText: {
+    fontSize: 22, fontWeight: 900, margin: '8px 0 20px',
+    background: 'linear-gradient(135deg, #c47a8a 0%, #6B82A0 100%)',
+    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+    letterSpacing: -0.5,
   },
-  profileLabel: { fontSize: 13, color: '#8a7a9a', fontWeight: 600 },
-  profileValue: { fontSize: 14, color: '#4a4a6a', fontWeight: 700 },
   statRow: {
-    display: 'flex', alignItems: 'center',
-    background: 'rgba(245,240,248,0.6)', borderRadius: 12,
-    padding: '10px 16px', marginBottom: 20, width: '100%',
-    border: '1px solid rgba(107,130,160,0.1)', justifyContent: 'center',
-    boxSizing: 'border-box',
+    display: 'flex', alignItems: 'center', gap: 0,
+    background: 'rgba(107,130,160,0.05)', borderRadius: 14,
+    padding: '14px 28px', width: '100%',
+    justifyContent: 'center', marginBottom: 24,
   },
-  statBox: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flex: 1 },
-  statNum: { fontSize: 22, fontWeight: 800, color: '#3a5a8a' },
-  statLabel: { fontSize: 12, color: '#8a7a9a', fontWeight: 600 },
-  statDivider: { width: 1, height: 36, background: 'rgba(107,130,160,0.2)', margin: '0 16px' },
-  primaryBtn: {
-    padding: '13px 24px', fontSize: 15, fontWeight: 700, color: '#fff',
-    background: 'linear-gradient(135deg, #6B82A0, #c47a8a)',
-    border: 'none', borderRadius: 14, cursor: 'pointer',
-    boxShadow: '0 4px 20px rgba(107,130,160,0.25)',
+  statItem: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flex: 1 },
+  statDivider: { width: 1, height: 30, background: 'rgba(107,130,160,0.15)', flexShrink: 0 },
+  statValue: { fontSize: 20, fontWeight: 900, color: '#3d3d5c' },
+  statLabel: { fontSize: 11, color: '#9ca3af', fontWeight: 600 },
+  infoGrid: { width: '100%', display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 },
+  infoRow: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    padding: '10px 14px', borderRadius: 12,
+    background: 'rgba(245,240,248,0.55)', border: '1px solid rgba(107,130,160,0.09)',
   },
-  secondaryBtn: {
-    padding: '13px 24px', fontSize: 15, fontWeight: 700, color: '#6B82A0',
-    background: 'rgba(107,130,160,0.1)', border: '1.5px solid rgba(107,130,160,0.25)',
-    borderRadius: 14, cursor: 'pointer',
+  infoLabel: { fontSize: 12, color: '#9ca3af', fontWeight: 600 },
+  infoValue: { fontSize: 13, color: '#4a4a6a', fontWeight: 700 },
+  btnPrimary: {
+    display: 'inline-flex', alignItems: 'center', gap: 6,
+    padding: '12px 22px', fontSize: 14, fontWeight: 700, color: '#fff',
+    background: 'linear-gradient(135deg, #c47a8a 0%, #6B82A0 100%)',
+    border: 'none', borderRadius: 12, cursor: 'pointer',
+    transition: 'all 0.2s',
+    boxShadow: '0 4px 16px rgba(107,130,160,0.22)',
   },
-  editPanel: {
-    width: '100%', marginTop: 24,
-    borderTop: '1.5px solid rgba(107,130,160,0.15)', paddingTop: 28,
+  btnSecondary: {
+    display: 'inline-flex', alignItems: 'center', gap: 6,
+    padding: '12px 22px', fontSize: 14, fontWeight: 700, color: '#6B82A0',
+    background: 'rgba(107,130,160,0.09)', border: '1.5px solid rgba(107,130,160,0.22)',
+    borderRadius: 12, cursor: 'pointer', transition: 'background 0.15s',
+  },
+  loadingText: { color: '#9ca3af', fontSize: 15, fontWeight: 600 },
+  emptyBox: {
+    textAlign: 'center', padding: '60px 20px',
+    background: 'rgba(255,255,255,0.7)', borderRadius: 20,
+    border: '1.5px dashed rgba(107,130,160,0.2)',
     display: 'flex', flexDirection: 'column', alignItems: 'center',
   },
-  formSection: { fontSize: 16, fontWeight: 800, color: '#3a5a8a', margin: '0 0 16px', alignSelf: 'flex-start' },
-  label: { fontSize: 13, fontWeight: 600, color: '#6B82A0', marginBottom: 6, alignSelf: 'flex-start' },
-  input: {
-    width: '100%', padding: '12px 14px', fontSize: 15,
-    border: '1.5px solid rgba(107,130,160,0.25)', borderRadius: 12, outline: 'none',
-    background: 'rgba(255,255,255,0.8)', marginBottom: 14, boxSizing: 'border-box',
+  galleryHeader: {
+    display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20,
+    width: '100%',
   },
-  errorBox: {
-    width: '100%', background: 'rgba(254,242,242,0.9)', border: '1px solid #FECACA',
-    borderRadius: 10, padding: '8px 12px', fontSize: 13, color: '#DC2626',
-    marginBottom: 12, boxSizing: 'border-box',
+  galleryTitle: { fontSize: 16, fontWeight: 800, color: '#4a4a6a', margin: 0 },
+  galleryCount: {
+    fontSize: 12, fontWeight: 700, color: '#6B82A0',
+    background: 'rgba(107,130,160,0.1)', borderRadius: 6, padding: '2px 8px',
   },
-  successBox: {
-    width: '100%', background: 'rgba(240,253,244,0.9)', border: '1px solid #86EFAC',
-    borderRadius: 10, padding: '8px 12px', fontSize: 13, color: '#16A34A',
-    marginBottom: 12, boxSizing: 'border-box',
-  },
-  divider: { width: '100%', height: 1, background: 'rgba(107,130,160,0.15)', margin: '24px 0' },
-  loadingText: { color: '#8a7a9a', fontSize: 15 },
-  emptyBox: {
-    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
-    padding: '60px 32px',
-    background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(245,240,248,0.8) 100%)',
-    borderRadius: 28, border: '1.5px solid rgba(255,255,255,0.7)',
-    boxShadow: '0 8px 40px rgba(107,130,160,0.12)',
-  },
-  emptyText: { fontSize: 16, color: '#8a7a9a', margin: 0 },
   galleryGrid: {
-    display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16,
+    display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 18,
+    width: '100%',
   },
   galleryCard: {
-    borderRadius: 20, overflow: 'hidden',
-    background: 'rgba(255,255,255,0.85)',
+    borderRadius: 18, overflow: 'hidden',
+    background: 'rgba(255,255,255,0.88)',
     border: '1.5px solid rgba(255,255,255,0.7)',
     boxShadow: '0 4px 20px rgba(107,130,160,0.10)',
-    transition: 'transform 0.15s, box-shadow 0.15s',
+    transition: 'transform 0.18s, box-shadow 0.18s',
+    cursor: 'pointer',
   },
-  galleryImgRow: { display: 'flex', gap: 0 },
-  galleryImgWrap: { flex: 1, display: 'flex', flexDirection: 'column' as const },
+  galleryImgRow: { display: 'flex' },
+  galleryImgWrap: { flex: 1, display: 'flex', flexDirection: 'column' },
   galleryImgLabel: {
-    fontSize: 10, fontWeight: 700, color: '#8a7a9a', textAlign: 'center' as const,
+    fontSize: 10, fontWeight: 700, color: '#b0a8bc', textAlign: 'center',
     margin: '6px 0 2px', letterSpacing: 0.5,
   },
-  galleryImg: { width: '100%', aspectRatio: '1', objectFit: 'cover' as const, display: 'block' },
+  galleryImg: { width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block' },
   galleryImgPlaceholder: {
     width: '100%', aspectRatio: '1',
-    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28,
-    background: 'linear-gradient(135deg, rgba(107,130,160,0.1), rgba(196,122,138,0.08))',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: 'linear-gradient(135deg, rgba(107,130,160,0.07), rgba(196,122,138,0.06))',
   },
   galleryInfo: { padding: '12px 14px' },
-  galleryDate: { fontSize: 14, fontWeight: 700, color: '#4a4a6a', margin: 0, whiteSpace: 'nowrap' as const },
-  galleryTitle: { fontSize: 11, fontWeight: 500, color: '#b0a8bc', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const },
-  galleryMeta: { fontSize: 12, color: '#8a7a9a', margin: '0 0 8px' },
+  galleryDate: { fontSize: 11, color: '#b0a8bc', margin: '0 0 2px', fontWeight: 600 },
+  galleryArtTitle: {
+    fontSize: 13, fontWeight: 800, color: '#4a4a6a',
+    margin: '0 0 6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+  },
+  galleryMeta: {
+    display: 'flex', gap: 8, fontSize: 11, color: '#9ca3af', marginBottom: 10, fontWeight: 600,
+  },
   galleryBtns: { display: 'flex', gap: 6 },
   galleryBtn: {
-    flex: 1, padding: '5px 0', fontSize: 11, fontWeight: 600, color: '#6B82A0',
-    background: 'rgba(107,130,160,0.08)', border: '1px solid rgba(107,130,160,0.15)',
-    borderRadius: 8, cursor: 'pointer',
+    flex: 1, padding: '6px 0',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: 'rgba(107,130,160,0.07)', border: '1px solid rgba(107,130,160,0.14)',
+    borderRadius: 8, cursor: 'pointer', color: '#6B82A0', transition: 'background 0.15s',
   },
   modalBackdrop: {
     position: 'fixed', inset: 0, zIndex: 500,
-    background: 'rgba(50,40,70,0.35)', backdropFilter: 'blur(6px)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    padding: 24,
+    background: 'rgba(50,40,70,0.4)', backdropFilter: 'blur(8px)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
   },
   modalCard: {
+    position: 'relative',
     background: 'linear-gradient(135deg, rgba(255,255,255,0.97) 0%, rgba(245,240,248,0.95) 100%)',
-    borderRadius: 28, padding: '36px 32px',
+    borderRadius: 28, padding: '44px 36px 36px',
     width: '100%', maxWidth: 420,
-    boxShadow: '0 20px 60px rgba(107,130,160,0.2)',
+    boxShadow: '0 24px 64px rgba(107,130,160,0.22)',
     border: '1.5px solid rgba(255,255,255,0.8)',
     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
   },
+  modalClose: {
+    position: 'absolute', top: 14, right: 16,
+    background: 'none', border: 'none', color: '#9ca3af',
+    cursor: 'pointer', lineHeight: 1, display: 'flex', alignItems: 'center',
+  },
+  followListItem: {
+    display: 'flex', alignItems: 'center', gap: 12,
+    padding: '12px 24px', cursor: 'pointer',
+    transition: 'background 0.12s',
+  },
+  followListAvatar: {
+    width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
+    background: 'linear-gradient(135deg, rgba(196,122,138,0.15), rgba(107,130,160,0.15))',
+    border: '2px solid rgba(255,255,255,0.8)',
+    boxShadow: '0 2px 8px rgba(107,130,160,0.15)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+  },
+  followListInitial: {
+    fontSize: 18, fontWeight: 900,
+    background: 'linear-gradient(135deg, #c47a8a, #6B82A0)',
+    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+  },
+  followListNickname: { margin: 0, fontSize: 14, fontWeight: 700, color: '#3d3d5c' },
+  followListSub: { margin: '2px 0 0', fontSize: 11, color: '#9ca3af', fontWeight: 600 },
   modalEyebrow: {
-    fontSize: 11, fontWeight: 700, letterSpacing: 3,
+    fontSize: 11, fontWeight: 700, letterSpacing: 2,
     color: '#c47a8a', textTransform: 'uppercase', margin: 0,
   },
   modalTitle: {
     fontSize: 20, fontWeight: 900, margin: 0, textAlign: 'center',
-    fontFamily: "'Jua', sans-serif",
     background: 'linear-gradient(135deg, #c47a8a, #6B82A0)',
     WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
   },
-  modalSub: {
-    fontSize: 13, color: '#a09ab0', margin: 0, textAlign: 'center',
-  },
+  modalSub: { fontSize: 13, color: '#a09ab0', margin: 0, textAlign: 'center' },
   modalInput: {
     width: '100%', padding: '13px 16px', fontSize: 15,
     border: '1.5px solid rgba(107,130,160,0.25)', borderRadius: 14, outline: 'none',

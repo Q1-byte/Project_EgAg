@@ -103,4 +103,22 @@ public class UserController {
         if (principal == null) throw new CustomException(HttpStatus.UNAUTHORIZED, "USER_NOT_FOUND", "로그인이 필요합니다.");
         userService.toggleFollow(principal.getUserId(), id);
     }
+
+    /** 팔로워 목록 */
+    @GetMapping("/{id}/followers")
+    public List<UserResponse> getFollowers(
+            @PathVariable String id,
+            @AuthenticationPrincipal PrincipalDetails principal) {
+        String currentUserId = principal != null ? principal.getUserId() : null;
+        return userService.getFollowers(id, currentUserId);
+    }
+
+    /** 팔로잉 목록 */
+    @GetMapping("/{id}/following")
+    public List<UserResponse> getFollowing(
+            @PathVariable String id,
+            @AuthenticationPrincipal PrincipalDetails principal) {
+        String currentUserId = principal != null ? principal.getUserId() : null;
+        return userService.getFollowing(id, currentUserId);
+    }
 }

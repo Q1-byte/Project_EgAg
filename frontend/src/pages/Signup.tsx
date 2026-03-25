@@ -172,6 +172,11 @@ export default function Signup() {
         .signup-btn-secondary:hover { background: #f5f5f7 !important; color: #374151 !important; }
         .signup-toggle-btn:hover { color: #6B82A0 !important; }
         .signup-login-link:hover { color: #c47a8a !important; text-decoration: underline !important; }
+        @media (max-width: 860px) {
+          .signup-left { display: none !important; }
+          .signup-right { border-radius: 0 !important; width: 100% !important; padding: 48px 28px !important; }
+          .signup-layout { min-height: 100vh !important; }
+        }
       `}</style>
 
       {/* 미입력 안내 모달 */}
@@ -189,9 +194,9 @@ export default function Signup() {
         </div>
       )}
 
-      <div style={s.layout}>
+      <div style={s.layout} className="signup-layout">
         {/* 왼쪽 브랜딩 패널 */}
-        <div style={s.panel}>
+        <div style={s.panel} className="signup-left">
           <div style={s.panelInner}>
             <img src="/Egag_logo-removebg.png" alt="EgAg" style={{ height: 80, marginBottom: 48 }} />
             <h2 style={{ margin: '0 0 20px', fontSize: 28, fontWeight: 800, letterSpacing: -0.5, color: '#fff' }}>창작의 공간,<br />이그에그</h2>
@@ -200,7 +205,7 @@ export default function Signup() {
         </div>
 
         {/* 오른쪽 폼 패널 */}
-        <div style={s.card}>
+        <div style={s.card} className="signup-right">
           <div style={s.titleArea}>
             <h1 style={s.title}>회원가입</h1>
             <p style={s.subtitle}>계정을 만들고 창작을 시작하세요</p>

@@ -62,11 +62,20 @@ export default function PasswordResetConfirm() {
   if (phase === 'done') {
     return (
       <div style={s.bg}>
-        <div style={s.card}>
+        <style>{`
+          @media (max-width: 640px) {
+            .prc-card { width: calc(100vw - 32px) !important; padding: 0 20px 32px !important; border-radius: 16px !important; }
+            .prc-title { font-size: 18px !important; }
+          }
+          @media (min-width: 641px) and (max-width: 860px) {
+            .prc-card { width: calc(100vw - 64px) !important; max-width: 440px !important; padding: 0 36px 40px !important; }
+          }
+        `}</style>
+        <div style={s.card} className="prc-card">
           <div style={s.logo} onClick={() => navigate('/')} role="button">
             <img src="/Egag_logo-removebg.png" alt="EgAg" style={{ height: 64, marginTop: 40, marginBottom: 20 }} />
           </div>
-          <h1 style={s.title}>비밀번호가 변경됐습니다</h1>
+          <h1 style={s.title} className="prc-title">비밀번호가 변경됐습니다</h1>
           <p style={s.desc}>새 비밀번호로 로그인해주세요.</p>
           <button style={s.btnPrimary} onClick={() => navigate('/login')}>
             로그인하러 가기
@@ -80,12 +89,21 @@ export default function PasswordResetConfirm() {
   if (phase === 'invalid') {
     return (
       <div style={s.bg}>
-        <div style={s.card}>
+        <style>{`
+          @media (max-width: 640px) {
+            .prc-card { width: calc(100vw - 32px) !important; padding: 0 20px 32px !important; border-radius: 16px !important; }
+            .prc-title { font-size: 18px !important; }
+          }
+          @media (min-width: 641px) and (max-width: 860px) {
+            .prc-card { width: calc(100vw - 64px) !important; max-width: 440px !important; padding: 0 36px 40px !important; }
+          }
+        `}</style>
+        <div style={s.card} className="prc-card">
           <div style={s.logo} onClick={() => navigate('/')} role="button">
             <img src="/Egag_logo-removebg.png" alt="EgAg" style={{ height: 64, marginTop: 40, marginBottom: 20 }} />
           </div>
           <div style={s.bigIcon}>⚠️</div>
-          <h1 style={s.title}>유효하지 않은 링크</h1>
+          <h1 style={s.title} className="prc-title">유효하지 않은 링크</h1>
           <p style={s.desc}>링크가 만료되었거나 이미 사용된 링크입니다.</p>
           <button style={s.btnPrimary} onClick={() => navigate('/password-reset')}>
             비밀번호 찾기 다시 시도
@@ -98,12 +116,21 @@ export default function PasswordResetConfirm() {
   // ─── 비밀번호 입력 폼 ────────────────────────────────────
   return (
     <div style={s.bg}>
-      <div style={s.card}>
+      <style>{`
+        @media (max-width: 640px) {
+          .prc-card { width: calc(100vw - 32px) !important; padding: 0 20px 32px !important; border-radius: 16px !important; }
+          .prc-title { font-size: 18px !important; }
+        }
+        @media (min-width: 641px) and (max-width: 860px) {
+          .prc-card { width: calc(100vw - 64px) !important; max-width: 440px !important; padding: 0 36px 40px !important; }
+        }
+      `}</style>
+      <div style={s.card} className="prc-card">
         <div style={s.logo} onClick={() => navigate('/')} role="button">
           <img src="/Egag_logo-removebg.png" alt="EgAg" style={{ height: 64, marginTop: 40, marginBottom: 20 }} />
         </div>
 
-        <h1 style={s.title}>새 비밀번호 설정</h1>
+        <h1 style={s.title} className="prc-title">새 비밀번호 설정</h1>
         <p style={s.subtitle}>사용할 새 비밀번호를 입력해주세요.</p>
 
         {errors.general && <div style={s.errorBanner}>{errors.general}</div>}

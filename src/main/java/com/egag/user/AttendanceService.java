@@ -23,8 +23,8 @@ public class AttendanceService {
     private final UserRepository userRepository;
     private final StreakClaimRepository streakClaimRepository;
 
-    private static final int[] STREAK_DAYS    = {3, 7, 30};
-    private static final int[] STREAK_BONUSES = {1, 3, 10};
+    private static final int[] STREAK_DAYS    = {3, 7, 15};
+    private static final int[] STREAK_BONUSES = {1, 3, 7};
 
     @Transactional
     public void checkIn(String userId) {
@@ -108,7 +108,10 @@ public class AttendanceService {
         List<Attendance> history = attendanceRepository.findByUserIdOrderByAttendanceDateDesc(userId);
         int streak = 0;
         ZoneId kst = ZoneId.of("Asia/Seoul");
-        LocalDate cursor = LocalDate.now(kst);
+        LocalDate today = LocalDate.now(kst);
+        // 오늘 출석 안 했으면 어제부터 계산
+        boolean attendedToday = history.stream().anyMatch(a -> a.getAttendanceDate().equals(today));
+        LocalDate cursor = attendedToday ? today : today.minusDays(1);
         for (Attendance a : history) {
             if (a.getAttendanceDate().equals(cursor)) { streak++; cursor = cursor.minusDays(1); }
             else break;
