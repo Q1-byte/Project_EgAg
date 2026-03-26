@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Search, Eye, EyeOff, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { getArtworks, toggleArtworkVisibility, deleteAdminArtwork, type AdminArtworkResponse } from '../../api/adminApi';
+import { resolveImageUrl } from '../../utils/imageUrl';
 
 const PAGE_SIZE = 10;
 
@@ -106,7 +107,7 @@ const AdminArtworkList = () => {
                                 <td style={s.td}>
                                     <div style={s.thumb}>
                                         {art.imageUrl
-                                            ? <img src={art.imageUrl} alt={art.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            ? <img src={resolveImageUrl(art.imageUrl)} alt={art.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                             : <span style={{ fontSize: 20 }}>🎨</span>
                                         }
                                     </div>

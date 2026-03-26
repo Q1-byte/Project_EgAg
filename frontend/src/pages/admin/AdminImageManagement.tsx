@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { RefreshCw, Image, Heart, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import type { MainBannerResponse, AdminArtworkResponse } from '../../api/adminApi';
+import { resolveImageUrl } from '../../utils/imageUrl';
 import { getAdminMainImages, getArtworks, assignMainImage, clearMainImageSlot } from '../../api/adminApi';
 
 interface BannerSlot extends MainBannerResponse { isPlaceholder?: boolean; }
@@ -137,7 +138,7 @@ const AdminImageManagement = () => {
                                 </div>
                                 <div style={s.slotImg}>
                                     {slot.imageUrl
-                                        ? <img src={slot.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        ? <img src={resolveImageUrl(slot.imageUrl)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                         : <div style={s.emptySlot}><Image size={20} color="#cbd5e1" /><span style={{ fontSize: 11, color: '#cbd5e1', marginTop: 6 }}>비어 있음</span></div>
                                     }
                                 </div>
@@ -166,7 +167,7 @@ const AdminImageManagement = () => {
                             style={{ ...s.artCard, cursor: selectedSlot !== null ? 'pointer' : 'default' }}
                             onClick={() => selectedSlot !== null && void handleAssign(art.id)}>
                             <div style={s.artImgWrap}>
-                                <img src={art.imageUrl} alt={art.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <img src={resolveImageUrl(art.imageUrl)} alt={art.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 <div className="art-overlay" style={s.artOverlay}>
                                     <span style={s.applyLabel}>
                                         {selectedSlot !== null ? `슬롯 ${selectedSlot + 1}에 반영` : '슬롯 먼저 선택'}

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ShieldAlert, X, EyeOff } from 'lucide-react';
 import { getAdminReportedArtworks, toggleArtworkVisibility, resolveReport } from '../../api/adminApi';
+import { resolveImageUrl } from '../../utils/imageUrl';
 
 interface ReportedArtwork {
     id: string;
@@ -150,7 +151,7 @@ const AdminArtworkManagement = () => {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                         <div style={s.thumb}>
                                             {r.artworkImageUrl
-                                                ? <img src={r.artworkImageUrl} alt={r.artworkTitle} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                ? <img src={resolveImageUrl(r.artworkImageUrl)} alt={r.artworkTitle} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                 : <span style={{ fontSize: 18 }}>🎨</span>
                                             }
                                         </div>
@@ -230,7 +231,7 @@ const AdminArtworkManagement = () => {
 
                         {/* 작품 이미지 */}
                         <div style={{ borderRadius: 12, overflow: 'hidden', background: '#f8fafc', height: 200, marginBottom: 16 }}>
-                            <img src={selected.artworkImageUrl} alt={selected.artworkTitle} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img src={resolveImageUrl(selected.artworkImageUrl)} alt={selected.artworkTitle} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
 
                         {/* 정보 그리드 */}
