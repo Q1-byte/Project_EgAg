@@ -38,7 +38,6 @@ import AdminLayout from './pages/admin/AdminLayout';
 import AdminImageManagement from './pages/admin/AdminImageManagement';
 import AdminInquiryManagement from './pages/admin/AdminInquiryManagement';
 import AdminArtworkManagement from './pages/admin/AdminArtworkManagement';
-import AdminArtworkList from './pages/admin/AdminArtworkList';
 
 function ScrollToTop() {
     const { pathname } = useLocation()
@@ -119,7 +118,6 @@ function App() {
                     <Route path="images" element={<AdminImageManagement />} />
                     <Route path="inquiries" element={<AdminInquiryManagement />} />
                     <Route path="artworks" element={<AdminArtworkManagement />} />
-                    <Route path="artwork-list" element={<AdminArtworkList />} />
                 </Route>
 
                 {/* 404 / 500 페이지 */}

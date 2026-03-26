@@ -18,6 +18,9 @@ public interface UserRepository extends JpaRepository<User, String> {
     boolean existsBySubEmail(String subEmail);
     Optional<User> findByProviderAndProviderId(String provider, String providerId);
 
+    @Query("SELECT u FROM User u WHERE u.nickname LIKE %:keyword% OR u.email LIKE %:keyword%")
+    List<User> searchByKeyword(@Param("keyword") String keyword);
+
     // 📊 오늘 가입자 수 조회 (정상 작동)
     long countByCreatedAtAfter(LocalDateTime date);
 
