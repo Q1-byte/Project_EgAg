@@ -9,6 +9,6 @@ public class InquiryRequest {
     private String title;
     private String content;
     private String email;
-    // 파일은 MultipartFile로 별도 처리하거나 URL만 받을 경우 사용
+    // 파일은 MultipartFile로 별도 처리하거나 URL만 받는 경우 사용
     private String attachmentUrl;
 }
