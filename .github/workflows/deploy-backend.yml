@@ -20,11 +20,13 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: '17'
           distribution: 'temurin'
 
       - name: Build with Gradle
-        run: ./gradlew bootJar -x test
+        run: |
+          chmod +x gradlew
+          ./gradlew bootJar -x test
 
       - name: Copy JAR to EC2
         uses: appleboy/scp-action@v0.1.7
@@ -32,7 +34,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: build/libs/*.jar
+          source: build/libs/egag-0.0.1-SNAPSHOT.jar
           target: /home/ubuntu/
           strip_components: 2
 
@@ -43,6 +45,6 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            pkill -f egag || true
-            mv /home/ubuntu/*.jar /home/ubuntu/egag-0.0.1-SNAPSHOT.jar
+            pkill -f egag-0.0.1-SNAPSHOT.jar || true
+            sleep 2
             nohup ~/start.sh > ~/app.log 2>&1 &
