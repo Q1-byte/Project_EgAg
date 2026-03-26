@@ -531,7 +531,7 @@ export default function TimeAttack() {
     }
     isDrawingRef.current = false
     const newStroke: Stroke = {
-      id: crypto.randomUUID(),
+      id: Math.random().toString(36).slice(2),
       points: currentPoints,
       color: isEraser ? '#ffffff' : color,
       strokeWidth: isEraser ? 28 : strokeWidth,

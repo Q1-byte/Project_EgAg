@@ -162,7 +162,7 @@ export default function Decalcomania() {
     }
     isDrawingRef.current = false
     const newStroke: Stroke = {
-      id: crypto.randomUUID(), points: currentPoints,
+      id: Math.random().toString(36).slice(2), points: currentPoints,
       color: isEraser ? '#ffffff' : color,
       width: isEraser ? 28 : strokeWidth,
     }
