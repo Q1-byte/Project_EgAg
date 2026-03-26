@@ -591,5 +591,4 @@ const s: Record<string, React.CSSProperties> = {
     background: 'rgba(107,130,160,0.08)',
     border: '1.5px solid rgba(107,130,160,0.2)', borderRadius: 12, cursor: 'pointer',
   },
-  backBtn: {},
 }

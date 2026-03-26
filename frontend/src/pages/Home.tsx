@@ -1,4 +1,5 @@
 import { useNavigate, Link } from 'react-router-dom'
+import { resolveImageUrl } from '../utils/imageUrl'
 import { consumeToken } from '../api/canvas'
 import { useEffect, useRef, useState, useMemo } from 'react'
 import { useAuthStore } from '../stores/useAuthStore'
@@ -103,7 +104,7 @@ function ArtworkCarousel() {
                 }}
               >
                 <img
-                  src={item.imageUrl}
+                  src={resolveImageUrl(item.imageUrl)}
                   alt=""
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none' }}
                 />

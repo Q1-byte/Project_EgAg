@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import type { ArtworkResponse } from '../types'
 import LikeButton from '../components/LikeButton'
+import { resolveImageUrl } from '../utils/imageUrl'
 
 interface ArtworkCardProps {
   artwork: ArtworkResponse
@@ -15,7 +16,7 @@ const ArtworkCard = ({ artwork, onLike, variant = 'default', showPrivateBadge = 
       <div className="artwork-image">
         {artwork.imageUrl ? (
           <img
-            src={artwork.imageUrl}
+            src={resolveImageUrl(artwork.imageUrl)}
             alt={artwork.title || '제목 없음'}
           />
         ) : (

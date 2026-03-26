@@ -7,6 +7,7 @@ import { getUnreadCount } from '../api/notification'
 import { getTodayAttendance } from '../api/user'
 import AttendanceModal from './AttendanceModal'
 import ChickStamp from './ChickStamp'
+import { resolveImageUrl } from '../utils/imageUrl'
 
 interface HeaderProps {
   hideOnScroll?: boolean
@@ -373,7 +374,7 @@ export default function Header({ hideOnScroll = false }: HeaderProps) {
                 >
                   {profileImageUrl ? (
                     <img
-                      src={profileImageUrl.startsWith('/uploads') ? `http://localhost:8080${profileImageUrl}` : profileImageUrl}
+                      src={resolveImageUrl(profileImageUrl)}
                       alt={nickname || ''}
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Heart, UserPlus, Palette, ChevronUp, Trash2, MessageCircle } from 'lucide-react'
 import { getNotifications, markNotificationsAsRead, deleteNotification, deleteAllNotifications } from '../api/notification'
@@ -6,7 +6,7 @@ import { getArtwork } from '../api/artwork'
 import type { NotificationResponse } from '../types'
 import Header from '../components/Header'
 
-const TYPE_META: Record<string, { icon: JSX.Element; color: string; bg: string; label: string }> = {
+const TYPE_META: Record<string, { icon: React.ReactElement; color: string; bg: string; label: string }> = {
   LIKE:     { icon: <Heart size={16} strokeWidth={2.5} />,    color: '#c47a8a', bg: 'rgba(196,122,138,0.1)',  label: '좋아요' },
   FOLLOW:   { icon: <UserPlus size={16} strokeWidth={2.5} />, color: '#6B82A0', bg: 'rgba(107,130,160,0.1)', label: '팔로우' },
   FINISHED:      { icon: <Palette size={16} strokeWidth={2.5} />,       color: '#8a6ab0', bg: 'rgba(138,106,176,0.1)', label: '완성' },

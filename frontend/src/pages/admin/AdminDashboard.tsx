@@ -7,6 +7,7 @@ import {
 import { Users, Palette, MessageCircle, DollarSign, TrendingUp, RefreshCw, Heart } from 'lucide-react';
 import { getAdminDashboardStats, getAdminUserByDate, getAdminRevenueByDate, type WeeklyStat, type ArtworkStat } from '../../api/adminApi';
 import { useAuthStore } from '../../stores/useAuthStore';
+import { resolveImageUrl } from '../../utils/imageUrl';
 
 const AdminDashboard = () => {
     const { accessToken } = useAuthStore();
@@ -127,7 +128,7 @@ const AdminDashboard = () => {
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                             <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} dy={8} />
                             <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} tickFormatter={(v: number) => v >= 1000 ? `${Math.round(v/1000)}k` : String(v)} />
-                            <Tooltip contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', fontSize: 12 }} formatter={(v: number) => [`₩${v.toLocaleString()}`, '매출']} />
+                            <Tooltip contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', fontSize: 12 }} formatter={(v) => [`₩${Number(v ?? 0).toLocaleString()}`, '매출']} />
                             <Line type="monotone" dataKey="value" stroke="#8b5cf6" strokeWidth={2.5}
                                 dot={{ r: 3, fill: '#8b5cf6', strokeWidth: 2, stroke: '#fff' }}
                                 activeDot={{ r: 5, strokeWidth: 0 }} />
@@ -168,7 +169,7 @@ const AdminDashboard = () => {
                                     <td style={s.td}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                             <div style={s.thumb}>
-                                                <img src={art.imageUrl} alt={art.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                <img src={resolveImageUrl(art.imageUrl)} alt={art.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                             </div>
                                             <span style={{ fontSize: 13, fontWeight: 700, color: '#1e293b' }}>{art.title}</span>
                                         </div>

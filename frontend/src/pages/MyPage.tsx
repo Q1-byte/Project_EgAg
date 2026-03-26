@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/useAuthStore'
 import Header from '../components/Header'
+import { resolveImageUrl } from '../utils/imageUrl'
 import { getMyProfile, updateMyProfile, changePassword, getMyArtworks, uploadProfilePhoto, toggleArtworkVisibility, deleteArtwork, getFollowers, getFollowing } from '../api/user'
 import { updateArtworkTitle } from '../api/artwork'
 import type { UserProfile, ArtworkSummary } from '../api/user'
@@ -125,7 +126,7 @@ export default function MyPage() {
   }
 
   const avatarSrc = profile?.profileImageUrl
-    ? (profile.profileImageUrl.startsWith('/uploads') ? `http://localhost:8080${profile.profileImageUrl}` : profile.profileImageUrl)
+    ? resolveImageUrl(profile.profileImageUrl)
     : null
 
   return (
@@ -314,7 +315,7 @@ export default function MyPage() {
                         <div style={s.galleryImgWrap}>
                           <p style={s.galleryImgLabel}>AI 그림</p>
                           {art.imageUrl
-                            ? <img src={art.imageUrl} alt="AI 그림" style={s.galleryImg} />
+                            ? <img src={resolveImageUrl(art.imageUrl)} alt="AI 그림" style={s.galleryImg} />
                             : <div style={s.galleryImgPlaceholder}><Eye size={24} color="#c4b5d0" /></div>
                           }
                         </div>
