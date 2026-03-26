@@ -44,8 +44,4 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            pkill -f "java.*egag" || true
-            sleep 2
-            nohup ~/start.sh > ~/app.log 2>&1 < /dev/null &
-            disown
+          script: sudo systemctl restart egag
