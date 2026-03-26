@@ -77,7 +77,7 @@ export const Inquiry = () => {
             alert("문의가 접수되었습니다.\n빠른 시일 내에 확인 후 처리해 드리겠습니다.");
             setFormData(prev => ({ ...prev, title: '', content: '' }));
             setFile(null);
-            setShowForm(false);
+            setShowFormModal(false);
         } catch (error) {
             const err = error as AxiosError<string>;
             alert(err.response?.data || "접수 중 오류가 발생했습니다.");

@@ -427,7 +427,7 @@ export default function AttendanceModal({ onClose, onSuccess }: AttendanceModalP
               disabled={attendedToday || isStamping}
               style={{
                 width: '100%', padding: '18px',
-                borderRadius: 18, border: 'none',
+                borderRadius: 18,
                 background: attendedToday
                   ? 'rgba(255,255,255,0.08)'
                   : 'rgba(255,215,0,0.12)',
