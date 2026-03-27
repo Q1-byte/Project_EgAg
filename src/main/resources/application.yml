@@ -105,6 +105,7 @@ resend:
 # 앱 설정
 app:
   base-url: ${APP_BASE_URL:http://localhost:5173}
+  backend-url: ${APP_BACKEND_URL:http://localhost:8080}
 
 server:
   port: 8080
