@@ -11,12 +11,10 @@ export default function TossPayPage() {
     const orderId = searchParams.get('orderId')
     const amount = Number(searchParams.get('amount'))
     const orderName = searchParams.get('orderName') || '토큰 충전'
-    const packageId = searchParams.get('packageId') || ''
-    const successBase = searchParams.get('successBase') || window.location.origin
+    const callbackUrl = searchParams.get('callbackUrl') || `${window.location.origin}/token-shop?status=toss_success`
+    const failUrl = `${window.location.origin}/token-shop?status=fail`
 
     if (!orderId || !amount) return
-
-    sessionStorage.setItem('toss_package_id', packageId)
 
     loadTossPayments(TOSS_CLIENT_KEY).then(tossPayments => {
       const payment = tossPayments.payment({ customerKey: `toss_${orderId}` })
@@ -25,11 +23,13 @@ export default function TossPayPage() {
         amount: { currency: 'KRW', value: amount },
         orderId,
         orderName,
-        successUrl: `${successBase}/token-shop?status=toss_success`,
-        failUrl: `${successBase}/token-shop?status=fail`,
+        successUrl: callbackUrl,
+        failUrl,
         card: { flowMode: 'DIRECT', easyPay: 'TOSSPAY' },
       })
-    }).catch(() => {})
+    }).catch(() => {
+      window.location.href = failUrl
+    })
   }, [])
 
   return null

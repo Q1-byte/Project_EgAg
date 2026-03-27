@@ -40,6 +40,9 @@ export const kakaoPayReady = (packageId: string) =>
 export const getPaymentStatus = (orderId: string) =>
   client.get<{ status: string; tokens?: string }>(`/payments/status/${orderId}`).then(res => res.data)
 
+export const tossPrepare = (packageId: string) =>
+  client.post<{ orderId: string; amount: string; orderName: string }>('/payments/toss/prepare', { packageId }).then(res => res.data)
+
 export const tossPayConfirm = (data: {
   paymentKey: string
   orderId: string

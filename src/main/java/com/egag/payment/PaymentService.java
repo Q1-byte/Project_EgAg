@@ -54,6 +54,87 @@ public class PaymentService {
         "shinhan",new String[]{"신한은행",    "110-123-456789"}
     );
 
+    @Transactional
+    public Map<String, String> tossPrepare(String email, String packageId) {
+        PackageInfo pkg = PackageInfo.fromId(packageId);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        String orderId = "egag_" + pkg.getId().toLowerCase() + "_" + System.currentTimeMillis();
+
+        Payment payment = Payment.builder()
+                .id(UUID.randomUUID().toString())
+                .user(user)
+                .impUid("toss_pending_" + orderId)
+                .merchantUid(orderId)
+                .packageName(pkg.getDisplayName())
+                .tokenAmount(pkg.getTokenAmount())
+                .amount(pkg.getPrice())
+                .payMethod("tosspay")
+                .status("ready")
+                .build();
+        paymentRepository.save(payment);
+
+        return Map.of("orderId", orderId, "amount", String.valueOf(pkg.getPrice()),
+                "orderName", pkg.getDisplayName() + " (토큰 " + pkg.getTokenAmount() + "개)");
+    }
+
+    @Transactional
+    public String tossCallback(String paymentKey, String orderId, int amount) {
+        Payment payment = paymentRepository.findByMerchantUid(orderId)
+                .orElseThrow(() -> new RuntimeException("결제 정보를 찾을 수 없습니다."));
+
+        if (!"ready".equals(payment.getStatus())) {
+            return appBaseUrl + "/token-shop?status=success&tokens=" + payment.getTokenAmount() + "&balance=" + payment.getUser().getTokenBalance();
+        }
+
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        String credentials = tossSecretKey + ":";
+        String encoded = Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
+        headers.set("Authorization", "Basic " + encoded);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("paymentKey", paymentKey);
+        body.put("orderId", orderId);
+        body.put("amount", amount);
+
+        try {
+            restTemplate.exchange(
+                    "https://api.tosspayments.com/v1/payments/confirm",
+                    HttpMethod.POST,
+                    new HttpEntity<>(body, headers),
+                    Map.class
+            );
+        } catch (HttpClientErrorException e) {
+            log.error("Toss callback confirm 실패: {}", e.getResponseBodyAsString());
+            return appBaseUrl + "/token-shop?status=fail";
+        }
+
+        payment.setStatus("paid");
+        payment.setImpUid(paymentKey);
+        payment.setPaidAt(LocalDateTime.now());
+        paymentRepository.save(payment);
+
+        User user = payment.getUser();
+        int newBalance = user.getTokenBalance() + payment.getTokenAmount();
+        user.setTokenBalance(newBalance);
+        userRepository.save(user);
+
+        tokenLogRepository.save(TokenLog.builder()
+                .id(UUID.randomUUID().toString())
+                .user(user)
+                .amount(payment.getTokenAmount())
+                .balanceAfter(newBalance)
+                .type("purchase")
+                .reason(payment.getPackageName() + " 패키지 구매 (토스페이)")
+                .referenceId(payment.getId())
+                .build());
+
+        return appBaseUrl + "/token-shop?status=success&tokens=" + payment.getTokenAmount() + "&balance=" + newBalance;
+    }
+
     public Map<String, String> getPaymentStatus(String orderId) {
         return paymentRepository.findByMerchantUid(orderId)
                 .map(p -> Map.of("status", p.getStatus(), "tokens", String.valueOf(p.getTokenAmount())))

@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { loadTossPayments } from '@tosspayments/tosspayments-sdk'
 import { useAuthStore } from '../stores/useAuthStore'
 import Header from '../components/Header'
-import { getPackages, requestBankTransfer, kakaoPayReady, tossPayConfirm } from '../api/payment'
+import { getPackages, requestBankTransfer, kakaoPayReady, tossPayConfirm, tossPrepare } from '../api/payment'
 import type { Package } from '../api/payment'
 import PaymentQrModal from '../components/PaymentQrModal'
 
@@ -164,10 +164,14 @@ export default function TokenShop() {
       return
     }
     if (payMethod === 'tosspay' || payMethod === 'card') {
-      const orderId = `egag_${selectedPkg.id.toLowerCase()}_${Date.now()}`
-      const orderName = `${selectedPkg.displayName} (토큰 ${selectedPkg.tokenAmount}개)`
-      const tossUrl = `${window.location.origin}/toss-pay?orderId=${encodeURIComponent(orderId)}&amount=${selectedPkg.price}&orderName=${encodeURIComponent(orderName)}&packageId=${selectedPkg.id}&successBase=${encodeURIComponent(window.location.origin)}`
-      setQrModal({ type: 'tosspay', url: tossUrl, orderId, amount: selectedPkg.price })
+      try {
+        const { orderId, amount, orderName } = await tossPrepare(selectedPkg.id)
+        const callbackUrl = `${window.location.origin}/api/payments/toss/callback`
+        const tossUrl = `${window.location.origin}/toss-pay?orderId=${encodeURIComponent(orderId)}&amount=${amount}&orderName=${encodeURIComponent(orderName)}&callbackUrl=${encodeURIComponent(callbackUrl)}`
+        setQrModal({ type: 'tosspay', url: tossUrl, orderId, amount: Number(amount) })
+      } catch {
+        setError('결제 준비 중 오류가 발생했습니다.')
+      }
       setLoading(false)
       return
     }

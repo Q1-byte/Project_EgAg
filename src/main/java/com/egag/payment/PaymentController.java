@@ -47,6 +47,22 @@ public class PaymentController {
         return ResponseEntity.ok(result);
     }
 
+    @PostMapping("/toss/prepare")
+    public ResponseEntity<Map<String, String>> tossPrepare(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody Map<String, String> request) {
+        return ResponseEntity.ok(paymentService.tossPrepare(userDetails.getUsername(), request.get("packageId")));
+    }
+
+    @GetMapping("/toss/callback")
+    public ResponseEntity<Void> tossCallback(
+            @RequestParam("paymentKey") String paymentKey,
+            @RequestParam("orderId") String orderId,
+            @RequestParam("amount") int amount) {
+        String redirectUrl = paymentService.tossCallback(paymentKey, orderId, amount);
+        return ResponseEntity.status(302).location(URI.create(redirectUrl)).build();
+    }
+
     @PostMapping("/toss/confirm")
     public ResponseEntity<PaymentResponse> tossPayConfirm(
             @AuthenticationPrincipal UserDetails userDetails,

@@ -50,6 +50,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/policy/**").permitAll()
                         .requestMatchers("/api/payments/webhook").permitAll()
                         .requestMatchers("/api/payments/kakaopay/approve").permitAll()
+                        .requestMatchers("/api/payments/toss/callback").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/payments/status/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/admin/main-images").permitAll()
