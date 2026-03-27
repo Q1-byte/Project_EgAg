@@ -33,6 +33,9 @@ public class KakaoAuthService {
     @Value("${kakao.redirect-uri}")
     private String redirectUri;
 
+    @Value("${kakao.client-secret:}")
+    private String clientSecret;
+
     @Value("${jwt.refresh-expiration}")
     private long refreshTokenExpiration;
 
@@ -63,6 +66,9 @@ public class KakaoAuthService {
         params.add("client_id", clientId);
         params.add("redirect_uri", redirectUri);
         params.add("code", code);
+        if (clientSecret != null && !clientSecret.isBlank()) {
+            params.add("client_secret", clientSecret);
+        }
 
         log.info("[KAKAO TOKEN] client_id={}, redirect_uri={}, code={}", clientId, redirectUri, code);
 
