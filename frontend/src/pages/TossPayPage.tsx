@@ -16,6 +16,9 @@ export default function TossPayPage() {
 
     if (!orderId || !amount) return
 
+    const method = searchParams.get('method')
+    const isCard = method === 'card'
+
     loadTossPayments(TOSS_CLIENT_KEY).then(tossPayments => {
       const payment = tossPayments.payment({ customerKey: `toss_${orderId}` })
       return payment.requestPayment({
@@ -25,7 +28,7 @@ export default function TossPayPage() {
         orderName,
         successUrl: callbackUrl,
         failUrl,
-        card: { flowMode: 'DIRECT', easyPay: 'TOSSPAY' },
+        ...(isCard ? {} : { card: { flowMode: 'DIRECT', easyPay: 'TOSSPAY' } }),
       })
     }).catch(() => {
       window.location.href = failUrl

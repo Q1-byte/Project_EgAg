@@ -163,12 +163,23 @@ export default function TokenShop() {
       setLoading(false)
       return
     }
-    if (payMethod === 'tosspay' || payMethod === 'card') {
+    if (payMethod === 'tosspay') {
       try {
         const { orderId, amount, orderName } = await tossPrepare(selectedPkg.id)
         const callbackUrl = `${window.location.origin}/api/payments/toss/callback`
         const tossUrl = `${window.location.origin}/toss-pay?orderId=${encodeURIComponent(orderId)}&amount=${amount}&orderName=${encodeURIComponent(orderName)}&callbackUrl=${encodeURIComponent(callbackUrl)}`
         setQrModal({ type: 'tosspay', url: tossUrl, orderId, amount: Number(amount) })
+      } catch {
+        setError('결제 준비 중 오류가 발생했습니다.')
+      }
+      setLoading(false)
+      return
+    }
+    if (payMethod === 'card') {
+      try {
+        const { orderId, amount, orderName } = await tossPrepare(selectedPkg.id)
+        const callbackUrl = `${window.location.origin}/api/payments/toss/callback`
+        navigate(`/toss-pay?orderId=${encodeURIComponent(orderId)}&amount=${amount}&orderName=${encodeURIComponent(orderName)}&callbackUrl=${encodeURIComponent(callbackUrl)}&method=card`)
       } catch {
         setError('결제 준비 중 오류가 발생했습니다.')
       }
