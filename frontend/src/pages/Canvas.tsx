@@ -79,6 +79,7 @@ export default function Canvas() {
   const stageRef = useRef<any>(null)
   const stageContainerRef = useRef<HTMLDivElement>(null)
   const isDrawing = useRef(false)
+  const isFilling = useRef(false)
 
   const [stageSize, setStageSize] = useState({ width: 800, height: 600 })
   const [phase, setPhase] = useState<Phase>('drawing')
@@ -291,10 +292,13 @@ export default function Canvas() {
   }
 
   const handleBucketClick = useCallback((_e: KonvaEventObject<PointerEvent>) => {
-    if (!isBucket || !stageRef.current) return
+    if (!isBucket || !stageRef.current || isFilling.current) return
     const stage = stageRef.current
     const pos = stage.getPointerPosition()
     if (!pos) return
+
+    isFilling.current = true
+    if (stageContainerRef.current) stageContainerRef.current.style.cursor = 'wait'
 
     const dataUrl = stage.toDataURL({ pixelRatio: 1, mimeType: 'image/png' })
     const img = new Image()
@@ -323,8 +327,14 @@ export default function Canvas() {
           return [...next, { strokes: cur.strokes, fill: resultImg }]
         })
         setHistoryIndex((i) => i + 1)
+        isFilling.current = false
+        if (stageContainerRef.current) stageContainerRef.current.style.cursor = 'crosshair'
       }
       resultImg.src = offscreen.toDataURL()
+    }
+    img.onerror = () => {
+      isFilling.current = false
+      if (stageContainerRef.current) stageContainerRef.current.style.cursor = 'crosshair'
     }
     img.src = dataUrl
   }, [isBucket, color, stageSize, historyIndex])
